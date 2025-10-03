@@ -162,7 +162,7 @@ export default function CourseID() {
                     </div>
                {isEnrolled  ? (
                   <Button className="w-full mb-4" asChild>
-                    <Link to="/dashboard/student">Go to Course</Link>
+                    <Link to={`/mycourses/${path._id}`}>Go to Course</Link>
                   </Button>
                 ) : (
                   <>

@@ -27,7 +27,7 @@ const levels = ["All", "Beginner", "Intermediate", "Advanced"]
 const sortOptions = ["Featured", "Price: Low to High", "Price: High to Low", "Rating", "Most Popular"]
 
 export default function Mycourses() {
-  const {learner , paths } = useAppContext()
+  const { paths } = useAppContext()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [selectedLevel, setSelectedLevel] = useState("All")
@@ -35,48 +35,48 @@ export default function Mycourses() {
   const [currentPage, setCurrentPage] = useState(1)
   const coursesPerPage = 8
 
-  const enrolledcourses = paths.filter((path) => learner.enrollPaths.includes(path._id))
   
 
   
 
   // Filter courses based on search term, category, and level
-  const filteredcourses = enrolledcourses.map((course) => {
-    const matchesSearch =
-      course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === "All" || course.category === selectedCategory
-    const matchesLevel = selectedLevel === "All" || course.level === selectedLevel
+ const filtered = paths.filter(path => {
+  const matchesSearch = path.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        path.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return matchesSearch && matchesCategory && matchesLevel
-  })
+  const matchesCategory = selectedCategory === "All" ||
+    path.category?.toLowerCase().replace(/\s|-/g, "") === selectedCategory.toLowerCase().replace(/\s|-/g, "");
+
+  const matchesLevel = selectedLevel === "All" ||
+    path.level?.toLowerCase() === selectedLevel.toLowerCase();
+
+  return matchesSearch && matchesCategory && matchesLevel;
+});
 
   // Sort courses
-  const sortedcourses = [...filteredcourses].sort((a, b) => {
+  const sortedPaths = [...filtered].sort((a, b) => {
     switch (sortBy) {
       case "Price: Low to High":
-        return a.price - b.price
+        return (a.price || 0) - (b.price || 0)
       case "Price: High to Low":
-        return b.price - a.price
+        return (b.price || 0) - (a.price || 0)
       case "Rating":
-        return b.rating - a.rating
-      case "Most Popular":
-        return b.students - a.students
+        return (b.rating || 0) - (a.rating || 0)
       default:
         return 0
     }
   })
 
   // Pagination
-  const totalPages = Math.ceil(sortedcourses.length / coursesPerPage)
+  const totalPages = Math.ceil(sortedPaths.length / coursesPerPage)
   const startIndex = (currentPage - 1) * coursesPerPage
-  const paginatedcourses = sortedcourses.slice(startIndex, startIndex + coursesPerPage)
+  const paginatedPaths = sortedPaths.slice(startIndex, startIndex + coursesPerPage)
 
   
 
   return (
     <div className="no-scrollbar flex-1 h-[95vh] overflow-y-scroll 
-        flex flex-col justify-between">
+        flex flex-col ">
 
       {/* Filters and Search */}
       <section className="py-8 px-4 border-b ">
@@ -146,7 +146,7 @@ export default function Mycourses() {
       {/* courses Grid */}
       <section className="py-12 px-14">
         <div className="container mx-auto">
-          {paginatedcourses.length === 0 ? (
+          {paginatedPaths.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">No learning paths found</h3>
@@ -155,7 +155,7 @@ export default function Mycourses() {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {enrolledcourses.map((course) => (
+                {paginatedPaths.map((course) => (
                   <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="aspect-video relative">
                       <img

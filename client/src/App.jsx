@@ -1,4 +1,5 @@
 import { Routes , Route } from "react-router-dom"
+import { useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Login from "./components/Login";
@@ -17,16 +18,22 @@ import Revenue from "./teacherDash/Revenue";
 import Admin from "./adminDash/Admin";
 import CourseID from "./pages/CourseID";
 import ForgotPassword from "./pages/ForgotPassword";
+import CourseDetails from "./pages/CourseDetails";
 import { useAppContext } from "./context/AppContext.jsx";
 
 function App() {
   const {showUserLogin} = useAppContext();
-  const hideNavFooter = ["/login", "/register",'/learner' , '/teacher', '/admin' ,'/teacher/courses',
-    '/teacher/students', '/teacher/revenue','/learner/my-courses'].includes(location.pathname);
+  const location = useLocation();
+  const hideNavFooterPaths = ["/login", "/register",'/learner' , '/teacher', '/admin' ,'/teacher/courses',
+    '/teacher/students', '/teacher/revenue','/learner/my-courses' , '/mycourses'];
+
+  const hideNavFooter = hideNavFooterPaths.some(path => location.pathname.startsWith(path));
+
+
   return (
     <div>
       {showUserLogin ? <Login /> : null}
-      {!hideNavFooter && <Navbar />}
+      {!hideNavFooter ? <Navbar /> : null}
       <div>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -35,6 +42,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/mycourses/:courseId" element={<CourseDetails />} />
           <Route path="/learner" element={<ProtectedRoute allowedRoles={["learner"]}><Learner /></ProtectedRoute>}>
             <Route index element={<Dashboard/>} />
             <Route path="my-courses" element={<MyCourses />} />

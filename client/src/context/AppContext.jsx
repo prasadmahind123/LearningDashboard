@@ -352,6 +352,8 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+
+
   // ------------------ MAIN AUTH CHECK ------------------
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -377,6 +379,7 @@ export const AppProvider = ({ children }) => {
             setIsAuthenticated(true);
             setUserRole("learner");
             setLearner(l.data.learner);
+
 
             return;
           }

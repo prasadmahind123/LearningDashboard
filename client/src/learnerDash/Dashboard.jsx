@@ -1,5 +1,5 @@
 
-import { useState  } from "react"
+import { useEffect, useState  } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -26,6 +26,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppContext } from "../context/AppContext.jsx"
+import { Link } from "react-router-dom"
 
 
 const recentActivity = [
@@ -38,7 +39,7 @@ const recentActivity = [
 ]
   
 export default function Dashboard() {
-  const { learner } = useAppContext();
+  const { learner , paths } = useAppContext();
   const [isChatOpen, setIsChatOpen] = useState(false)
   const enrolledcourses = learner?.enrollPaths || [];
   const [chatMessages, setChatMessages] = useState([
@@ -53,6 +54,14 @@ export default function Dashboard() {
   const [chatInput, setChatInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [selectedcourse, setSelectedcourse] = useState(null)
+  const [learnerPaths, setLearnerPaths] = useState(learner?.enrollPaths || []); // paths enrolled by logged-in learner
+
+  useEffect(() => {
+    paths.find((p => p.id === learnerPaths[0]?.id)) && setLearnerPaths(learnerPaths.map(lp => {
+      const fullPath = paths.find(p => p.id === lp.id);
+      return fullPath ? { ...fullPath, ...lp } : lp; // merge full path details with learner-specific data
+    }))
+  }, [paths]);
 
 
   
@@ -201,7 +210,7 @@ export default function Dashboard() {
                   <CardDescription>Continue where you left off</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {enrolledcourses.map((course) => (
+                  {learnerPaths.map((course) => (
                     <div
                       key={course.id}
                       className="flex items-center space-x-4 p-4 border rounded-lg hover:shadow-md transition-shadow"
@@ -246,10 +255,13 @@ export default function Dashboard() {
                       </div>
                       <div className="text-right space-y-2">
                         <div className="flex space-x-2">
-                          <Button size="sm"  className = "bg-blue-500 hover:bg-blue-400 cursor-pointer" onClick={() => setSelectedcourse(course)}>
-                            <Eye className="h-3 w-3 mr-1 cursor-pointer" />
-                            Details
-                          </Button>
+                          <Link to={`/courses/learning-path/${course._id}`}>
+                            <Button size="sm"  className = "bg-blue-500 hover:bg-blue-400 cursor-pointer" onClick={() => setSelectedcourse(course)}>
+                              <Eye className="h-3 w-3 mr-1 cursor-pointer" />
+                              Details
+                            </Button>
+                          </Link>
+                          
                           <Button size="sm" variant="outline" className = "cursor-pointer">
                             <Play className="h-3 w-3 mr-1 cursor-pointer" />
                             Continue
@@ -446,7 +458,7 @@ export default function Dashboard() {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Students:</span>
-                            <span className="font-medium">{selectedcourse.totalStudents.toLocaleString()}</span>
+                            <span className="font-medium">{selectedcourse.totalStudents}</span>
                           </div>
                         </CardContent>
                       </Card>
