@@ -216,7 +216,7 @@ export const enrollingInPath = async (req, res) => {
       { _id: studentId },
       {
         $addToSet: { enrolledPaths: pathId }, // Use $addToSet to avoid duplicates
-        $inc: { totalCoursesEnrolled: 1, totalLearningHours: path.totalHours || 0 } // Increment counters
+        $inc: { totalcoursesEnrolled: 1, totalLearningHours: path.totalHours || 0 } // Increment counters
       }
     );
     console.log("Learner updated with new path:", pathId);
