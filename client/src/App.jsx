@@ -19,6 +19,7 @@ import Admin from "./adminDash/Admin";
 import CourseID from "./pages/CourseID";
 import ForgotPassword from "./pages/ForgotPassword";
 import CourseDetails from "./pages/CourseDetails";
+import PdfViewer from "./pages/PdfViewer";
 import { useAppContext } from "./context/AppContext.jsx";
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/pdf-viewer/:url" element={<PdfViewer />} />
           <Route path="/mycourses/:courseId" element={<CourseDetails />} />
           <Route path="/learner" element={<ProtectedRoute allowedRoles={["learner"]}><Learner /></ProtectedRoute>}>
             <Route index element={<Dashboard/>} />

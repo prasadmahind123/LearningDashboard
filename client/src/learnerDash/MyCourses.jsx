@@ -1,5 +1,5 @@
-import React , {useState} from 'react'
-import { BookOpen, Clock, Star, Users, Search, Filter } from "lucide-react"
+import React , {useState , useEffect} from 'react'
+import { BookOpen, Clock, Star, Users, Search, Filter, Key } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -27,20 +27,32 @@ const levels = ["All", "Beginner", "Intermediate", "Advanced"]
 const sortOptions = ["Featured", "Price: Low to High", "Price: High to Low", "Rating", "Most Popular"]
 
 export default function Mycourses() {
-  const { paths } = useAppContext()
+  const { paths  , learner} = useAppContext()
+  const enrolledcourses = learner?.enrollPaths || [];
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [selectedLevel, setSelectedLevel] = useState("All")
   const [sortBy, setSortBy] = useState("Featured")
   const [currentPage, setCurrentPage] = useState(1)
+  const [learnerPaths, setLearnerPaths] = useState(learner?.enrollPaths || []);
   const coursesPerPage = 8
 
-  
+
+
+
+    useEffect(() => {
+      paths.find((p => p.id === learnerPaths[0]?.id)) && setLearnerPaths(learnerPaths.map(lp => {
+        const fullPath = paths.find(p => p.id === lp.id);
+        return fullPath ? { ...fullPath, ...lp } : lp; // merge full path details with learner-specific data
+      }))
+    }, [paths]);
+
+    console.log(learnerPaths)
 
   
 
   // Filter courses based on search term, category, and level
- const filtered = paths.filter(path => {
+ const filtered = learnerPaths.filter(path => {
   const matchesSearch = path.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                         path.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -157,6 +169,7 @@ export default function Mycourses() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {paginatedPaths.map((course) => (
                   <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                    {course.id}
                     <div className="aspect-video relative">
                       <img
                         src={course.image || "/placeholder.svg"}
