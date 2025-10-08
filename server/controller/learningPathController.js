@@ -1,8 +1,10 @@
 import LearningPath from '../models/learningPath.js';
 import Teacher from '../models/teacher.js';
 import mongoose from 'mongoose';
-import { uploadImage, uploadFile } from '../config/cloudinary.js';
-
+import {
+  uploadImage,
+  uploadFile
+} from '../config/cloudinary.js';
 
 
 // Helper function to upload content files
@@ -14,10 +16,14 @@ const uploadContentFiles = async (content, existingContentMap) => {
 
     if (item._id && existingContentMap[item._id]) {
       // Start with existing module to preserve _id and resources
-      uploadedItem = { ...existingContentMap[item._id] };
+      uploadedItem = { ...existingContentMap[item._id]
+      };
     } else {
       // New module → assign new _id
-      uploadedItem = { ...item, _id: new mongoose.Types.ObjectId(), resources: [] };
+      uploadedItem = { ...item,
+        _id: new mongoose.Types.ObjectId(),
+        resources: []
+      };
     }
 
     // Update title, description, duration if provided
@@ -119,21 +125,31 @@ const uploadContentFiles = async (content, existingContentMap) => {
 // Create a new learning path
 export const createLearningPath = async (req, res) => {
   try {
-    let { title, description, category, level, price, duration , code , isPrivate } = req.body;
-    
+    let {
+      title,
+      description,
+      category,
+      level,
+      price,
+      duration,
+      code,
+      isPrivate
+    } = req.body;
+
     // Handle both JSON and form-data formats
     let content = [];
     let image = null;
-    
+
     // Check if files were uploaded
     if (req.files) {
       // Handle pathImage
-      if (req.files['pathImage'] && req.files['pathImage'][0]) {
-        const imageUpload = await uploadImage(req.files['pathImage'][0].path); // use .path instead of .buffer
+      const pathImage = req.files.find(file => file.fieldname === 'pathImage');
+      if (pathImage) {
+        const imageUpload = await uploadImage(pathImage.path);
         image = imageUpload.secure_url;
       }
 
-      
+
       // Parse content from form data
       if (req.body.content) {
         try {
@@ -142,10 +158,10 @@ export const createLearningPath = async (req, res) => {
           content = [];
         }
       }
-      
+
       // Handle uploaded content files
       const processedContent = [];
-      
+
       // Process each content item
       for (let i = 0; i < content.length; i++) {
         const contentItem = content[i];
@@ -155,47 +171,48 @@ export const createLearningPath = async (req, res) => {
           duration: parseFloat(contentItem.duration || 0),
           resources: []
         };
-        
+
         // Handle video files
-        const videoKey = `content[${i}][files][video]`;
-        if (req.files[videoKey] && req.files[videoKey][0]) {
-          const videoUpload = await uploadFile(req.files[videoKey][0].path, 'video');
+        const videoFile = req.files.find(file => file.fieldname === `content[${i}][files][video]`);
+        if (videoFile) {
+          const videoUpload = await uploadFile(videoFile.path, 'video');
           uploadedItem.resources.push({
             fileUrl: videoUpload.url,
             fileType: 'video',
-            fileName: req.files[videoKey][0].originalname,
+            fileName: videoFile.originalname,
             publicId: videoUpload.publicId,
             duration: videoUpload.duration || null,
             format: videoUpload.format || 'mp4',
             size: videoUpload.bytes || null
           });
         }
-        
+
+
         // Handle PDF files
-        const pdfKey = `content[${i}][files][pdf]`;
-        if (req.files[pdfKey] && req.files[pdfKey][0]) {
-         const pdfUpload = await uploadFile(req.files[pdfKey][0].path, 'raw');
+        const pdfFile = req.files.find(file => file.fieldname === `content[${i}][files][pdf]`);
+        if (pdfFile) {
+          const pdfUpload = await uploadFile(pdfFile.path, 'raw');
           uploadedItem.resources.push({
             fileUrl: pdfUpload.url,
             fileType: 'pdf',
-            fileName: req.files[pdfKey][0].originalname,
+            fileName: pdfFile.originalname,
             publicId: pdfUpload.publicId,
             format: 'pdf',
             size: pdfUpload.bytes || null
           });
 
         }
-        
+
         // Handle other file types similarly...
         processedContent.push(uploadedItem);
       }
-      
+
       content = processedContent;
     } else {
       // Handle JSON format
       content = req.body.content || [];
       image = req.body.image;
-      
+
       if (image) {
         const uploadedImage = await uploadImage(image);
         image = uploadedImage.url;
@@ -224,8 +241,8 @@ export const createLearningPath = async (req, res) => {
       price,
       duration,
       image: image || '',
-      code : code || '',
-      isPrivate : isPrivate || false,
+      code: code || '',
+      isPrivate: isPrivate || false,
       createdBy: req.userId,
       content: content || [],
       totalHours,
@@ -239,9 +256,13 @@ export const createLearningPath = async (req, res) => {
 
     // Add learning path to teacher's createdPaths
     await Teacher.findByIdAndUpdate(
-      req.userId,
-      { $push: { createdPaths: learningPath._id } },
-      { new : true }
+      req.userId, {
+        $push: {
+          createdPaths: learningPath._id
+        }
+      }, {
+        new: true
+      }
     );
 
     res.status(201).json({
@@ -263,9 +284,13 @@ export const createLearningPath = async (req, res) => {
 export const getTeacherLearningPaths = async (req, res) => {
   try {
     const teacherId = req.userId;
-    const learningPaths = await LearningPath.find({ createdBy: req.userId })
+    const learningPaths = await LearningPath.find({
+        createdBy: req.userId
+      })
       .populate('createdBy', 'name email')
-      .sort({ createdAt: -1 });
+      .sort({
+        createdAt: -1
+      });
 
     res.status(200).json({
       success: true,
@@ -285,7 +310,9 @@ export const getTeacherLearningPaths = async (req, res) => {
 // ✅ Get learning path by ID
 export const learningPathById = async (req, res) => {
   try {
-    const { id } = req.params;  // use params instead of body
+    const {
+      id
+    } = req.params; // use params instead of body
     const learningPath = await LearningPath.findById(id).populate("createdBy", "fullName email createdPaths expertise");
 
     if (!learningPath) {
@@ -335,7 +362,9 @@ export const getAllLearningPaths = async (req, res) => {
 // Delete a learning path
 export const deleteLearningPath = async (req, res) => {
   try {
-    const { id } = req.params;
+    const {
+      id
+    } = req.params;
 
     // Find the learning path
     const learningPath = await LearningPath.findById(id);
@@ -356,8 +385,11 @@ export const deleteLearningPath = async (req, res) => {
 
     // Remove learning path from teacher's createdPaths
     await Teacher.findByIdAndUpdate(
-      req.userId,
-      { $pull: { createdPaths: id } }
+      req.userId, {
+        $pull: {
+          createdPaths: id
+        }
+      }
     );
 
     // Delete the learning path
@@ -377,151 +409,159 @@ export const deleteLearningPath = async (req, res) => {
   }
 };
 
+// server/controller/learningPathController.js
+
 export const updateLearningPath = async (req, res) => {
   try {
     const { id } = req.params;
-    let {
-      title,
-      description,
-      category,
-      level,
-      price,
-      duration,
-      content // can be array or JSON string
-    } = req.body;
+    const { title, description, category, level, price, duration, code } = req.body;
 
-    // ✅ Ensure content is parsed into an array
-    if (content) {
-      if (typeof content === "string") {
-        try {
-          content = JSON.parse(content);
-          if (typeof content === "string") {
-            content = JSON.parse(content); // handle double JSON encoding
-          }
-        } catch (err) {
-          return res.status(400).json({ success: false, message: "Invalid content format" });
-        }
-      }
-      if (!Array.isArray(content)) {
-        return res.status(400).json({ success: false, message: "Content must be an array" });
-      }
-    } else {
-      content = [];
+    // Validate Learning Path ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid Learning Path ID." });
     }
 
-    // ✅ Fetch path
+    // Fetch learning path
     const learningPath = await LearningPath.findById(id);
     if (!learningPath) {
-      return res.status(404).json({ success: false, message: "Learning path not found" });
+      return res.status(404).json({ success: false, message: "Learning path not found." });
     }
 
-    // ✅ Authorization
+    // Authorization
     if (learningPath.createdBy.toString() !== req.userId) {
-      return res.status(403).json({ success: false, message: "Not authorized to update this learning path" });
+      return res.status(403).json({ success: false, message: "Not authorized to update this path." });
     }
 
-    // ✅ Map existing modules
-    const existingContentMap = {};
-    learningPath.content.forEach(mod => {
-      if (mod._id) existingContentMap[mod._id.toString()] = mod;
-    });
-
-    // ✅ Merge content
-    const updatedContentMap = { ...existingContentMap };
-    if (content.length > 0) {
-      for (const module of content) {
-        if (typeof module !== "object" || module === null) {
-          return res.status(400).json({ success: false, message: "Invalid module format" });
-        }
-
-        if (module._id && updatedContentMap[module._id]) {
-          // Existing module → preserve required fields if missing
-          const old = updatedContentMap[module._id];
-          updatedContentMap[module._id] = {
-            ...old,
-            ...module,
-            title: module.title ?? old.title,
-            description: module.description ?? old.description,
-            duration: module.duration ?? old.duration
-          };
-        } else {
-          // ✅ New module → must include title
-          if (!module.title || !module.title.trim()) {
-            return res.status(400).json({
-              success: false,
-              message: "Each new module must include a title"
-            });
-          }
-          module._id = new mongoose.Types.ObjectId();
-          updatedContentMap[module._id.toString()] = module;
-        }
-      }
-    }
-
-    let updatedContent = Object.values(updatedContentMap);
-
-    // ✅ File uploads
-    if (req.files && Object.keys(req.files).length > 0) {
-      updatedContent = await uploadContentFiles(updatedContent, existingContentMap);
-    }
-
-    // ✅ Total hours
-    const totalHours = updatedContent.reduce((sum, item) => {
-      const hrs = parseFloat(String(item.duration ?? "0").replace(/[^0-9.]/g, "")) || 0;
-      return sum + hrs;
-    }, 0);
-
-    // ✅ Update path fields
+    // Update top-level fields
     learningPath.title = title || learningPath.title;
     learningPath.description = description || learningPath.description;
     learningPath.category = category || learningPath.category;
     learningPath.level = level || learningPath.level;
-    learningPath.price = price || learningPath.price;
+    learningPath.price = price !== undefined ? price : learningPath.price;
     learningPath.duration = duration || learningPath.duration;
-    learningPath.content = updatedContent;
-    learningPath.totalHours = totalHours;
+    if (code) learningPath.code = code;
 
-    // ✅ Optional free access code
-    if (req.body.code && req.body.code.trim() !== "") {
-      learningPath.code = req.body.code.trim();
+    // Parse incoming content
+    let incomingContent = [];
+    if (req.body.content) {
+      try {
+        incomingContent = JSON.parse(req.body.content);
+        if (!Array.isArray(incomingContent)) throw new Error("Content must be an array.");
+      } catch (e) {
+        return res.status(400).json({ success: false, message: e.message || "Invalid content format." });
+      }
     }
 
+    // Process each module
+    for (let index = 0; index < incomingContent.length; index++) {
+      const moduleData = incomingContent[index];
+
+      // Check if module exists
+      let module = learningPath.content.find(m => m._id.toString() === moduleData._id);
+
+      if (module) {
+        // Update existing module
+        module.title = moduleData.title || module.title;
+        module.description = moduleData.description || module.description;
+        module.duration = moduleData.duration || module.duration;
+      } else {
+        // Add new module
+        module = {
+          _id: new mongoose.Types.ObjectId(),
+          title: moduleData.title,
+          description: moduleData.description,
+          duration: moduleData.duration,
+          resources: [],
+        };
+      }
+
+      // Handle file uploads for this module
+      const fileTypes = ["video", "pdf", "bibtex", "excel", "additionalFiles"];
+      for (const type of fileTypes) {
+        const files = req.files?.filter(f => f.fieldname.includes(`content[${index}][files][${type}]`)) || [];
+
+        for (const file of files) {
+          try {
+            const uploadType = type === "video" ? "video" : "auto";
+            const uploadResult = await uploadFile(file.path, uploadType);
+            console.log(uploadResult.url)
+            if (uploadResult?.url) {
+              module.resources.push({
+                fileUrl: uploadResult.url,
+                fileType: type === "additionalFiles" ? "additional" : type,
+                fileName: file.originalname,
+                publicId: uploadResult.publicId,
+                format: uploadResult.format || "file",
+                size: uploadResult.bytes || null,
+              });
+            }
+          } catch (err) {
+            console.error("Error uploading file to Cloudinary:", file.originalname, err.message);
+          }
+        }
+        
+      }
+      learningPath.content.push(module);
+    }
+
+    // Recalculate total hours
+    learningPath.totalHours = learningPath.content.reduce((total, item) => {
+      const hours = parseFloat(String(item.duration || "0").replace(/[^0-9.]/g, "")) || 0;
+      return total + hours;
+    }, 0);
+
+    // Save the updated learning path
     await learningPath.save();
 
     res.status(200).json({
       success: true,
-      message: "Learning path updated successfully",
-      learningPath
+      message: "Learning path updated successfully!",
+      learningPath,
     });
   } catch (error) {
     console.error("Error updating learning path:", error);
     res.status(500).json({
       success: false,
-      message: "Error updating learning path",
-      error: error.message
+      message: "An internal server error occurred.",
+      error: error.message,
     });
   }
 };
 
 
+
+
+
 // Delete a single module from a learning path
 export const deleteModule = async (req, res) => {
   try {
-    const { pathId, index } = req.params;
+    const {
+      pathId,
+      index
+    } = req.params;
 
     const learningPath = await LearningPath.findById(pathId);
     if (!learningPath) {
-      return res.status(404).json({ success: false, message: "Learning path not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Learning path not found"
+      });
     }
 
     // Check ownership
     if (learningPath.createdBy.toString() !== req.userId) {
-      return res.status(403).json({ success: false, message: "Not authorized" });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized"
+      });
     }
 
     // Remove by index
     if (index < 0 || index >= learningPath.content.length) {
-      return res.status(400).json({ success: false, message: "Invalid module index" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid module index"
+      });
     }
 
     learningPath.content.splice(index, 1);
@@ -542,11 +582,10 @@ export const deleteModule = async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting module:", error);
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
   }
 };
-
-
-
-
-

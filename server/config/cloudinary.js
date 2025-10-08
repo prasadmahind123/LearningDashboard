@@ -77,20 +77,28 @@ const uploadImage = async (file, options = {}) => {
 };
 
 const uploadVideo = async (filePath, options = {}) => {
-    try {
-        if (!filePath) {
-            throw new Error("No file path provided for upload");
-            }
-            const result = await cloudinary.uploader.upload(filePath, {
-                resource_type: 'video',
-                folder: 'learning-paths/videos',
-                ...options
-                });
-                
-    }catch(error){
-        console.error("Error uploading to Cloudinary:", error);
-    }
-}
+  try {
+    if (!filePath) throw new Error("No file path provided for upload");
+
+    const result = await cloudinary.uploader.upload(filePath, {
+      resource_type: 'video',
+      folder: 'learning-paths/videos',
+      ...options
+    });
+
+    return {
+      url: result.secure_url,
+      publicId: result.public_id,
+      duration: result.duration,
+      format: result.format,
+      bytes: result.bytes
+    };
+  } catch (error) {
+    console.error("Error uploading video to Cloudinary:", error);
+    throw error;
+  }
+};
+
 
 const uploadDocument = async (filePath, options = {}) => {
     try {

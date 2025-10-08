@@ -8,27 +8,12 @@ const learningPathRouter = express.Router();
 
 // Create a new learning path with content upload support
 learningPathRouter.route('/addpath')
-.post(
-    upload.fields([
-        { name: 'pathImage', maxCount: 1 },
-        { name: 'content[0][files][video]', maxCount: 1 },
-        { name: 'content[0][files][pdf]', maxCount: 1 },
-        { name: 'content[0][files][bibtex]', maxCount: 1 },
-        { name: 'content[0][files][excel]', maxCount: 1 },
-        { name: 'content[0][files][additionalFiles]', maxCount: 10 },
-        { name: 'content[1][files][video]', maxCount: 1 },
-        { name: 'content[1][files][pdf]', maxCount: 1 },
-        { name: 'content[1][files][bibtex]', maxCount: 1 },
-        { name: 'content[1][files][excel]', maxCount: 1 },
-        { name: 'content[1][files][additionalFiles]', maxCount: 10 },
-        { name: 'content[2][files][video]', maxCount: 1 },
-        { name: 'content[2][files][pdf]', maxCount: 1 },
-        { name: 'content[2][files][bibtex]', maxCount: 1 },
-        { name: 'content[2][files][excel]', maxCount: 1 },
-        { name: 'content[2][files][additionalFiles]', maxCount: 10 }
-    ]),
-    authTeacher ,createLearningPath
-)
+  .post(
+    upload.any(), // Accept all files, no need to hardcode indices
+    authTeacher,
+    createLearningPath
+  );
+
 
 learningPathRouter.get("/my-paths", authTeacher, getTeacherLearningPaths);
 
