@@ -30,19 +30,6 @@ const learnerSchema = new mongoose.Schema({
       ref: 'LearningPath'
     }
   ],
-  progress: [
-    {
-      pathId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'LearningPath'
-      },
-      completedModules: [String], // could be module IDs or titles
-      progressPercent: {
-        type: Number,
-        default: 0
-      }
-    }
-  ],
 
   totalLearningHours: {
     type: Number,

@@ -40,18 +40,6 @@ const teacherSchema = new mongoose.Schema({
       ref: "LearningPath",
     },
   ],
-  learningPaths: [
-    {
-      pathId: { type: mongoose.Schema.Types.ObjectId, ref: "LearningPath" },
-      title: String,
-      enrolledStudents: [
-        {
-          studentId: { type: mongoose.Schema.Types.ObjectId, ref: "Learner" },
-          enrolledAt: { type: Date, default: Date.now }
-        }
-      ]
-    }
-  ],
   revenue: {
     type: Number,
     default: 0, // Initial revenue is 0

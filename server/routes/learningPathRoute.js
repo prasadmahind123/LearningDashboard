@@ -1,7 +1,7 @@
 import express from 'express';
 import { upload } from '../config/multer.js';
 import { createLearningPath , getTeacherLearningPaths , updateLearningPath  ,
-     learningPathById ,getAllLearningPaths , deleteLearningPath , deleteModule} from '../controller/learningPathController.js';
+     learningPathById ,getAllLearningPaths , deleteLearningPath , deleteModuleByTitle} from '../controller/learningPathController.js';
 import authTeacher from '../middleware/authTeacher.js';
 
 const learningPathRouter = express.Router();
@@ -25,7 +25,7 @@ learningPathRouter.delete("/delete/:id", authTeacher, deleteLearningPath);
 
 learningPathRouter.get("/allpaths" , getAllLearningPaths);
 
-learningPathRouter.delete("/module/:pathId/:index", authTeacher, deleteModule);
+learningPathRouter.delete("/:pathId/modules", authTeacher, deleteModuleByTitle);
 
 
 

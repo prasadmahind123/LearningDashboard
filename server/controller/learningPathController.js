@@ -1,5 +1,6 @@
 import LearningPath from '../models/learningPath.js';
 import Teacher from '../models/teacher.js';
+import Learner from '../models/learner.js'
 import mongoose from 'mongoose';
 import {
   uploadImage,
@@ -392,6 +393,13 @@ export const deleteLearningPath = async (req, res) => {
       }
     );
 
+    // Remove learning path from all learners' enrolledPaths
+    await Learner.updateMany(
+      { enrolledPaths: id },
+      { $pull: { enrolledPaths: id } }
+    );
+
+
     // Delete the learning path
     await LearningPath.findByIdAndDelete(id);
 
@@ -532,39 +540,32 @@ export const updateLearningPath = async (req, res) => {
 
 
 
-// Delete a single module from a learning path
-export const deleteModule = async (req, res) => {
+export const deleteModuleByTitle = async (req, res) => {
   try {
-    const {
-      pathId,
-      index
-    } = req.params;
+    const { pathId } = req.params;
+    const { title } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ success: false, message: "Module title is required." });
+    }
 
     const learningPath = await LearningPath.findById(pathId);
     if (!learningPath) {
-      return res.status(404).json({
-        success: false,
-        message: "Learning path not found"
-      });
+      return res.status(404).json({ success: false, message: "Learning path not found." });
     }
 
     // Check ownership
     if (learningPath.createdBy.toString() !== req.userId) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized"
-      });
+      return res.status(403).json({ success: false, message: "Not authorized to modify this path." });
     }
 
-    // Remove by index
-    if (index < 0 || index >= learningPath.content.length) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid module index"
-      });
-    }
+    const initialModuleCount = learningPath.content.length;
+    // Filter out the module with the matching title
+    learningPath.content = learningPath.content.filter(module => module.title !== title);
 
-    learningPath.content.splice(index, 1);
+    if (learningPath.content.length === initialModuleCount) {
+      return res.status(404).json({ success: false, message: `Module with title "${title}" not found.` });
+    }
 
     // Recalculate total hours
     learningPath.totalHours = learningPath.content.reduce((total, item) => {
@@ -577,15 +578,11 @@ export const deleteModule = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Module deleted successfully",
+      message: "Module deleted successfully.",
       learningPath,
     });
   } catch (error) {
     console.error("Error deleting module:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: "Server error while deleting module.", error: error.message });
   }
 };
