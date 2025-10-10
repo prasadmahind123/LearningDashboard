@@ -57,11 +57,14 @@ export default function Dashboard() {
   const [learnerPaths, setLearnerPaths] = useState(learner?.enrollPaths || []); // paths enrolled by logged-in learner
 
   useEffect(() => {
-    paths.find((p => p.id === learnerPaths[0]?.id)) && setLearnerPaths(learnerPaths.map(lp => {
-      const fullPath = paths.find(p => p.id === lp.id);
-      return fullPath ? { ...fullPath, ...lp } : lp; // merge full path details with learner-specific data
-    }))
-  }, [paths]);
+      if (!learner?.enrollPaths?.length || !paths?.length) return;
+
+      const learnerPaths = paths.filter((p) =>
+      learner.enrollPaths.includes(p._id)
+    );
+
+    setLearnerPaths(learnerPaths)
+  }, [paths , learner]);
 
 
   

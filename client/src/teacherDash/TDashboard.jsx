@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import {
   BookOpen,Users,DollarSign,TrendingUp,Plus,Eye,Edit,X,
+  Minus,
 } from "lucide-react"
 
 // Use teacher.courses from context
@@ -57,6 +58,14 @@ export default function TDashboard() {
 
   const [isViewcourseOpen, setIsViewcourseOpen] = useState(false);
   const [viewingcourse, setViewingcourse] = useState(null);
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+
+  const [moduleTitleToDelete, setModuleTitleToDelete] = useState("");
+
+
+
 
 
   // const learningPaths = teacher?.createdPaths || [];
@@ -329,6 +338,36 @@ const handleUpdatecourse = async () => {
   }
 };
 
+
+const handleDeleteModule = async () => {
+    if (!editingcourse || !moduleTitleToDelete) {
+      alert("Please select a course and enter a module title to delete.");
+      return;
+    }
+
+    try {
+      const { data } = await axios.delete(`/api/learningpaths/${editingcourse._id}/modules`, {
+        data: { title: moduleTitleToDelete } // Send title in the request body
+      });
+
+      if (data.success) {
+        alert("Module deleted successfully!");
+        // Update the form state to reflect the deletion
+        setEditcourseForm(prev => ({
+            ...prev,
+            learningPath: prev.learningPath.filter(m => m.title !== moduleTitleToDelete)
+        }));
+        setIsDeleteDialogOpen(false);
+        setModuleTitleToDelete("");
+        window.location.reload(); // Or update state more granularly
+      } else {
+        alert(`Error: ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Error deleting module:", error);
+      alert(error.response?.data?.message || "An error occurred while deleting the module.");
+    }
+  };
 
 
 
@@ -809,11 +848,42 @@ const removeEditLearningPathItem = (index) => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <Label className="text-lg font-semibold">learning path Modules</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addEditLearningPathItem}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Module
+                    <div className="flex gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={addEditLearningPathItem}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Module
+                      </Button>
+                     <Button type="button" variant="destructive" size="sm" onClick={() => setIsDeleteDialogOpen(true)}>
+                        <X className="mr-2 h-4 w-4" />
+                        Delete Section
                     </Button>
+
+
+                    </div>
                   </div>
+                   <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                      <DialogContent className="max-w-md">
+                          <DialogHeader>
+                              <DialogTitle>Delete a Module</DialogTitle>
+                              <DialogDescription>
+                                  Enter the exact title of the module you wish to delete. This action cannot be undone.
+                              </DialogDescription>
+                          </DialogHeader>
+                          <div className="py-4">
+                              <Label htmlFor="module-title-to-delete">Module Title</Label>
+                              <Input
+                                  id="module-title-to-delete"
+                                  value={moduleTitleToDelete}
+                                  onChange={(e) => setModuleTitleToDelete(e.target.value)}
+                                  placeholder="e.g., Introduction to React"
+                              />
+                          </div>
+                          <DialogFooter>
+                              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+                              <Button variant="destructive" onClick={handleDeleteModule} disabled={!moduleTitleToDelete.trim()} >Delete Module</Button>
+                          </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
 
                   <div className="space-y-4 max-h-60 overflow-y-auto">
                     {editcourseForm.learningPath.map((item, index) => (
@@ -998,7 +1068,7 @@ const removeEditLearningPathItem = (index) => {
                           </div>
                         </div>
                       </Card>
-                    ))}
+                    ))} 
                   </div>
                 </div>
               </div>
@@ -1228,8 +1298,9 @@ const removeEditLearningPathItem = (index) => {
           </div>
         </DialogContent>
       </Dialog>
-
+                 
 
     </div>
+    
   )
 }

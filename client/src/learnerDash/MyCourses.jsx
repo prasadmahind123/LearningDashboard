@@ -40,14 +40,17 @@ export default function Mycourses() {
 
 
 
-    useEffect(() => {
-      paths.find((p => p.id === learnerPaths[0]?.id)) && setLearnerPaths(learnerPaths.map(lp => {
-        const fullPath = paths.find(p => p.id === lp.id);
-        return fullPath ? { ...fullPath, ...lp } : lp; // merge full path details with learner-specific data
-      }))
-    }, [paths]);
+  useEffect(() => {
+      if (!learner?.enrollPaths?.length || !paths?.length) return;
 
-    console.log(learnerPaths)
+      const learnerPaths = paths.filter((p) =>
+      learner.enrollPaths.includes(p._id)
+    );
+
+    setLearnerPaths(learnerPaths)
+  }, [paths , learner]);
+
+
 
   
 
