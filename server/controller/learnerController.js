@@ -179,6 +179,11 @@ export const enrollInPath = async (req, res) => {
 
     );
 
+    await Teacher.updateOne(
+      { _id: path.createdBy },
+      { $addToSet: { enrolledStudents: studentId } }
+    );
+
     learner.totalcoursesEnrolled += 1;
     await learner.save();
 
@@ -239,5 +244,14 @@ export const getEnrolledPaths = async (req, res) => {
     res.json({ enrolled: Boolean(enrolled) });
   } catch (err) {
     res.status(500).json({ message: "Error checking enrollment" });
+  }
+};
+
+export const getAllLearners = async (req, res) => {
+  try {
+    const learners = await Learner.find();
+    res.json({ success: true, learners });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch learners" });
   }
 };

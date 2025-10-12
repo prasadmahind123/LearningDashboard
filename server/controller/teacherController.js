@@ -109,6 +109,7 @@ export const loginTeacher = async (req, res) => {
         institution: teacher.institution,
         expertise: teacher.expertise,
         createdPaths: teacher.createdPaths,
+        enrolledStudents: teacher.enrolledStudents,
         certificates: teacher.certificates,
         revenue: teacher.revenue,
         createdAt: teacher.createdAt,
@@ -150,6 +151,7 @@ export const isAuthTeacher = async (req, res) => {
         institution: teacher.institution,
         expertise: teacher.expertise,
         createdPaths: teacher.createdPaths,
+        enrolledStudents: teacher.enrolledStudents,
         certificates: teacher.certificates,
         revenue: teacher.revenue,
         createdAt: teacher.createdAt,
@@ -182,8 +184,7 @@ export const logoutTeacher = async (req, res) => {
 // =============================
 export const getEnrolledStudents = async (req, res) => {
   try {
-    const teacher = await Teacher.findById(req.userId)
-      .populate("learningPaths.enrolledStudents.studentId", "fullName email");
+    const teacher = await Teacher.findById(req.userId).populate("enrolledStudents", "fullName email");
 
     if (!teacher) {
       return res.status(404).json({ success: false, message: "Teacher not found" });
@@ -191,7 +192,7 @@ export const getEnrolledStudents = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      enrolledStudents: teacher.learningPaths,
+      students: teacher.enrolledStudents,
     });
   } catch (error) {
     console.error("Error fetching enrolled students:", error);

@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerLearner, loginLearner, isAuthLearner, logoutLearner , enrollInPath , getEnrolledPaths } from '../controller/learnerController.js';
+import { registerLearner, loginLearner, isAuthLearner, logoutLearner , enrollInPath , getEnrolledPaths , getAllLearners} from '../controller/learnerController.js';
 import authLearner from '../middleware/authLearner.js';
 import { upload } from '../config/multer.js';
 
@@ -17,6 +17,8 @@ learnerRouter.get('/logout', logoutLearner);
 learnerRouter.post('/enroll-path', authLearner, enrollInPath);
 // Rote to get enrolled paths of learner
 learnerRouter.get('/enrolled-paths/:pathId', authLearner, getEnrolledPaths);
+
+learnerRouter.get('/getAllLearners' , getAllLearners)
 
 
 export default learnerRouter;
