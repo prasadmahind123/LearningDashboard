@@ -308,6 +308,7 @@ export const AppProvider = ({ children }) => {
   const [learner, setLearner] = useState(null); // logged-in learner
   const [paths, setPaths] = useState([]); // all learning paths (for everyone)
   const [teachersPath, setTeachersPath] = useState([]); // paths created by logged-in teacher
+  const [enrolledStudents , setEnrolledStudents] = useState([])
 
   // ------------------ API CALLS ------------------
   const fetchAdmin = async () => {
@@ -351,6 +352,33 @@ export const AppProvider = ({ children }) => {
       setTeachersPath([]);
     }
   };
+
+  const fetchAllLearners = async () =>{
+    try {
+      const {data} = await axios.get('/api/learner/getAllLearners')
+      if(data.success && Array.isArray(data.learners)){
+        setLearners(data.learners);
+      }else{
+        setLearners([]);
+      }
+    } catch (error) {
+      console.error("Error fetching Learners :", error);
+    }
+  }
+
+  const fetchEnrolledLearners = async () =>{
+    try {
+      const { data } = await axios.get("/api/teacher/enrolled-students");
+      if (data.success) {
+        setEnrolledStudents(data.students);
+      }else{
+        setEnrolledStudents([]);
+      }
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      setEnrolledStudents([]);
+    }
+  }
 
 
 
@@ -422,6 +450,7 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     if (userRole === "teacher" && teacher?._id) {
       fetchTeacherPaths();
+      fetchEnrolledLearners();
     }
   }, [userRole, teacher]);
 
@@ -431,6 +460,10 @@ export const AppProvider = ({ children }) => {
       fetchAdmin();
     }
   }, [userRole]);
+
+  useEffect(()=>{
+    fetchAllLearners();
+  })
 
   // ------------------ CONTEXT VALUE ------------------
   const value = {
@@ -454,6 +487,7 @@ export const AppProvider = ({ children }) => {
     setPaths,
     teachersPath,
     setTeachersPath,
+    enrolledStudents,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
