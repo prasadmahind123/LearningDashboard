@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { type } from 'os';
+import { ref } from 'process';
 
 const resourceSchema = new mongoose.Schema({
   fileName: { type: String, required: true },
@@ -26,12 +27,14 @@ const learningPathSchema = new mongoose.Schema({
   code: { type: String, unique: true }, // Unique code for free access
   content: [contentSchema], // Multiple content modules
   totalHours: { type: Number, default: 0 },
+  learners : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Learner' }],
   price : {type : Number},
   duration : {type : String},
   revenue: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });
 
-// ✅ Prevent OverwriteModelError
-export default mongoose.models.LearningPath ||
-  mongoose.model('LearningPath', learningPathSchema);
+
+
+const LearningPath =  mongoose.models.learningPath || mongoose.model("LearningPath" , learningPathSchema)
+export default LearningPath;

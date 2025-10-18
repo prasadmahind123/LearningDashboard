@@ -1,5 +1,5 @@
 import Learner from "../models/learner.js";
-import LearningPath from "../models/LearningPath.js";
+import LearningPath from "../models/learningPath.js";
 import Teacher from "../models/teacher.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -193,6 +193,11 @@ export const enrollInPath = async (req, res) => {
       { _id: path.createdBy },
       { $addToSet: { enrolledStudents: studentId } },
       { $inc: { totalStudents: 1 } } // increment total students
+    );
+
+    await LearningPath.updateOne(
+        { _id: pathId },
+        { $addToSet: { learners: studentId } }
     );
     
 

@@ -133,6 +133,7 @@ export const createLearningPath = async (req, res) => {
       level,
       price,
       duration,
+      learners,
       code,
       isPrivate
     } = req.body;
@@ -245,6 +246,7 @@ export const createLearningPath = async (req, res) => {
       code: code || '',
       isPrivate: isPrivate || false,
       createdBy: req.userId,
+      learners : learners || [],
       content: content || [],
       totalHours,
       revenue: 0
