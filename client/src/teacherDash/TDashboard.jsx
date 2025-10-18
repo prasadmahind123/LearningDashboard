@@ -450,9 +450,17 @@ const removeEditLearningPathItem = (index) => {
                       <SelectContent>
                         <SelectItem value="web-development">Web Development</SelectItem>
                         <SelectItem value="data-science">Data Science</SelectItem>
+                        <SelectItem value="machine-learning">Machine Learning</SelectItem>
                         <SelectItem value="mobile-development">Mobile Development</SelectItem>
                         <SelectItem value="design">Design</SelectItem>
                         <SelectItem value="marketing">Marketing</SelectItem>
+                        <SelectItem value="cyber-security">Cyber Security</SelectItem>
+                        <SelectItem value="database">Database</SelectItem>
+                        <SelectItem value="devops">DevOps</SelectItem>
+                        <SelectItem value="programming">Programming</SelectItem>
+                        <SelectItem value="cloud-computing">Cloud Computing</SelectItem>
+                        <SelectItem value="Blockchain">Blockchain</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1146,7 +1154,7 @@ const removeEditLearningPathItem = (index) => {
                   </div>
                   <div className="grid grid-cols-4 gap-4 text-sm text-muted-foreground">
                     <div>
-                      <span className="font-medium">{course.students || 0}</span> students
+                      <span className="font-medium">{course.learners?.length}</span> students
                     </div>
                     <div>
                       <span className="font-medium">${course.revenue || 0}</span> revenue

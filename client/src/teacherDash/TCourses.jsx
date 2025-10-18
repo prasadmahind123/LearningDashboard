@@ -148,7 +148,7 @@ const confirmDeleteCourse = async () => {
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <p className="text-muted-foreground">Students</p>
-                            <p className="font-semibold text-lg">{course.students}</p>
+                            <p className="font-semibold text-lg">{course.learners?.length}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Revenue</p>

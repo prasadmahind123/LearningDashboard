@@ -34,7 +34,6 @@ export default function TStudents() {
     const manageView = (student) =>{
       setSelectedStudent(student);
 
-
     }
 
     
@@ -119,7 +118,7 @@ export default function TStudents() {
                             </TableCell>
                             <TableCell>
                               <div className="text-sm">
-                                <p className="font-medium">{student.totalcoursesEnrolled} enrolled</p>
+                                <p className="font-medium">{student.enrolledPaths.length} enrolled</p>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -155,7 +154,7 @@ export default function TStudents() {
                                               <div className="flex items-center space-x-2">
                                                 <BookOpen className="h-4 w-4 text-blue-500" />
                                                 <div>
-                                                  <p className="text-2xl font-bold">{selectedStudent.totalcoursesEnrolled}</p>
+                                                  <p className="text-2xl font-bold">{selectedStudent.enrolledPaths.length}</p>
                                                   <p className="text-xs text-muted-foreground">Total learning path</p>
                                                 </div>
                                               </div>

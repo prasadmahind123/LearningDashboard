@@ -192,7 +192,7 @@ export default function CoursesPage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Users className="h-4 w-4" />
-                          <span>{path.students?.toLocaleString() || 0}</span>
+                          <span>{path.learners?.length || 0}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />

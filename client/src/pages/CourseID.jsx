@@ -111,7 +111,7 @@ export default function CourseID() {
                   <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                   <span className="font-semibold">{path.rating || "4.5"}</span>
                   <span className="text-slate-300">
-                    ({path.students?.toLocaleString() || 0} students)
+                    ({path.learners?.length || 0} students)
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -254,12 +254,12 @@ export default function CourseID() {
                           <p className="text-muted-foreground">Instructor Rating</p>
                         </div>
                         <div>
-                          <div className="font-semibold mb-1">1200</div>
+                          <div className="font-semibold mb-1">{path.learners?.length || 0}</div>
                           <p className="text-muted-foreground">Students</p>
                         </div>
                         <div>
                           <div className="font-semibold mb-1">
-                            {path?.createdBy?.createdPaths?.length || 0}
+                            {path.createdBy?.createdPaths?.length || 0}
                           </div>
                           <p className="text-muted-foreground">Courses</p>
                         </div>
