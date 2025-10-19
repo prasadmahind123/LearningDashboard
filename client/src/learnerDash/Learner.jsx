@@ -16,6 +16,7 @@ export default function Learner() {
      const sidebarLinks = [
         { name: "Dashboard", path: "/learner"},
         { name: "My learning path", path: "/learner/my-courses"},
+        { name: "Progress", path: "/learner/progress"},
         { name: "Brows New learning path", path: "/courses"},
     ];
      const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)

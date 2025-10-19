@@ -11,6 +11,7 @@ import Learner from "./learnerDash/Learner";
 import Dashboard from "./learnerDash/Dashboard";
 import MyCourses from "./learnerDash/MyCourses";
 import Teacher from "./teacherDash/Teacher";
+import Progress from "./learnerDash/Progress";
 import TDashboard from "./teacherDash/TDashboard";
 import TCourses from "./teacherDash/TCourses";
 import TStudents from "./teacherDash/TStudents";
@@ -48,6 +49,7 @@ function App() {
           <Route path="/learner" element={<ProtectedRoute allowedRoles={["learner"]}><Learner /></ProtectedRoute>}>
             <Route index element={<Dashboard/>} />
             <Route path="my-courses" element={<MyCourses />} />
+            <Route path="progress" element={<Progress/>} />
           </Route>
           <Route path="/teacher" element={<ProtectedRoute allowedRoles={["teacher"]}><Teacher /></ProtectedRoute>}>
             <Route index element={<TDashboard />} />

@@ -353,18 +353,18 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const fetchAllLearners = async () =>{
-    try {
-      const {data} = await axios.get('/api/learner/getAllLearners')
-      if(data.success && Array.isArray(data.learners)){
-        setLearners(data.learners);
-      }else{
-        setLearners([]);
-      }
-    } catch (error) {
-      console.error("Error fetching Learners :", error);
-    }
-  }
+  // const fetchAllLearners = async () =>{
+  //   try {
+  //     const {data} = await axios.get('/api/learner/getAllLearners')
+  //     if(data.success && Array.isArray(data.learners)){
+  //       setLearners(data.learners);
+  //     }else{
+  //       setLearners([]);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching Learners :", error);
+  //   }
+  // }
 
   const fetchEnrolledLearners = async () =>{
     try {
@@ -461,9 +461,9 @@ export const AppProvider = ({ children }) => {
     }
   }, [userRole]);
 
-  useEffect(()=>{
-    fetchAllLearners();
-  })
+  // useEffect(()=>{
+  //   fetchAllLearners();
+  // })
 
   // ------------------ CONTEXT VALUE ------------------
   const value = {
