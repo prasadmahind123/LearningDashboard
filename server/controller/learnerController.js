@@ -3,6 +3,7 @@ import LearningPath from "../models/learningPath.js";
 import Teacher from "../models/teacher.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { updateLearnerStats } from "../services/learnerStats.js";
 
 // Register a new learner
 
@@ -258,5 +259,46 @@ export const getAllLearners = async (req, res) => {
     res.json({ success: true, learners });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to fetch learners" });
+  }
+};
+
+export const addLearningHours = async (req, res) => {
+  try {
+    const { learnerId, hours } = req.body;
+    const learner = await Learner.findById(learnerId);
+    if (!learner) return res.status(404).json({ message: "Learner not found" });
+
+    const today = new Date();
+    const existingEntry = learner.learningActivity.find(entry =>
+      entry.date.toDateString() === today.toDateString()
+    );
+
+    if (existingEntry) existingEntry.hoursSpent += hours;
+    else learner.learningActivity.push({ date: today, hoursSpent: hours });
+
+    await learner.save();
+
+    // ✅ Update stats after adding hours
+    await updateLearnerStats(learner._id);
+
+    res.json({ message: "Learning hours added and stats updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getLearnerStats = async (req, res) => {
+  try {
+    const { learnerId } = req.params;
+    await updateLearnerStats(learnerId); // Ensure stats are up-to-date
+    const learner = await Learner.findById(learnerId).select(
+      "totalLearningHours progressStats learningActivity"
+    );
+
+    res.json(learner);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };
