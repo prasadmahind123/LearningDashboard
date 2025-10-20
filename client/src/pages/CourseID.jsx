@@ -17,25 +17,23 @@ export default function CourseID() {
 
   const path = paths.find((p) => p._id === id);
 
-  useEffect(() => {
-    const checkEnrollment = async () => {
-      if (!learner || !path) {
-        setIsEnrolled(false);
-        return;
-      }
-      try {
-        if (learner.enrollPaths?.includes(path._id)) {
-          setIsEnrolled(true);
-        } else {
-          setIsEnrolled(false);
-        }
-      } catch (err) {
-        console.error("Error checking enrollment:", err);
-      }
-    };
+const [enrollment, setEnrollment] = useState(null);
 
-    checkEnrollment();
-  }, [learner, path]);
+useEffect(() => {
+  if (!learner || !path) return;
+
+  const enrolled = learner.enrolledPaths?.find(
+    (e) => e.pathId === path._id
+  );
+
+  if (enrolled) {
+    setEnrollment(enrolled);
+    setIsEnrolled(true);
+  } else {
+    setEnrollment(null);
+    setIsEnrolled(false);
+  }
+}, [learner, path]);
 
   if (!path) {
     return <div className="p-6 text-red-500">Course not found</div>;

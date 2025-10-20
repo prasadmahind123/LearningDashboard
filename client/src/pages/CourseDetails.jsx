@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState , useRef} from "react";
 import { useAppContext } from "../context/AppContext.jsx";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -67,6 +67,8 @@ export default function CourseDetails() {
 
   const [selectedModuleIndex, setSelectedModuleIndex] = useState(0);
   const [completedModules, setCompletedModules] = useState([]);
+  const moduleStartTime = useRef(null);
+  const heartbeatTimer = useRef(null);
 
   useEffect(() => {
     if (learner && course) {
@@ -79,6 +81,36 @@ export default function CourseDetails() {
     }
   }, [learner, course]);
 
+   // Start timer when module changes
+  useEffect(() => {
+    moduleStartTime.current = new Date();
+
+    // send time spent when user leaves page
+    const handleBeforeUnload = async () => {
+      await sendTimeSpent();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // start heartbeat
+    startHeartbeat();
+
+    return () => {
+      stopHeartbeat();
+      sendTimeSpent(); // send time when switching modules
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [selectedModuleIndex]);
+
+    const startHeartbeat = () => {
+    stopHeartbeat(); // clear existing if any
+    heartbeatTimer.current = setInterval(() => {
+      sendTimeSpent();
+    }, 5 * 60 * 1000); // every 5 minutes
+  };
+
+   const stopHeartbeat = () => {
+    if (heartbeatTimer.current) clearInterval(heartbeatTimer.current);
+  };
   const handleSelectModule = (index) => setSelectedModuleIndex(index);
 
   const selectedModule = useMemo(() => {
@@ -92,38 +124,85 @@ export default function CourseDetails() {
     return null;
   }, [course, selectedModuleIndex]);
 
+    const sendTimeSpent = async () => {
+    if (!selectedModule || !moduleStartTime.current) return;
+
+    const now = new Date();
+    const timeSpentHours = (now - moduleStartTime.current) / (1000 * 60 * 60); // hours
+    if (timeSpentHours <= 0) return;
+
+    moduleStartTime.current = new Date(); // reset start time
+
+    try {
+      await axios.put("/api/learner/complete-module", {
+        studentId: learner._id,
+        pathId: course._id,
+        moduleId: selectedModule._id,
+        action: completedModules.includes(selectedModule._id) ? "remove" : "add",
+        hoursSpent: timeSpentHours,
+      });
+    } catch (error) {
+      console.error("Failed to send time spent:", error);
+    }
+  };
+
   const toggleComplete = async (moduleId) => {
+  try {
     const isCompleted = completedModules.includes(moduleId);
-    const newCompletedModules = isCompleted
+
+    // Toggle locally for UI response
+    const updatedModules = isCompleted
       ? completedModules.filter((id) => id !== moduleId)
       : [...completedModules, moduleId];
 
-    setCompletedModules(newCompletedModules);
+    setCompletedModules(updatedModules);
+    console.log(learner.id)
 
-    // Uncomment when API available
-    /*
+    // ✅ Call backend to update learner progress
+    const res = await axios.post("/api/learner/complete-module", {
+      studentId : learner.id,
+      pathId: course._id,
+      moduleId,
+      action: isCompleted ? "remove" : "add", // optional to handle unmarking
+    }, { withCredentials: true }
+  );
+
+    console.log("✅ Progress updated:", res.data);
+  } catch (error) {
+    console.error("❌ Failed to update progress:", error);
+  }
+};
+
+useEffect(() => {
+  const fetchLearnerProgress = async () => {
     try {
-      await axios.put(`/api/learner/progress/${course._id}`, {
-        completedModules: newCompletedModules,
-      });
+      const res = await axios.get(`/api/learner/progress/${learner._id}/${courseId}`);
+      const enrollment = res.data.enrolledPath;
+
+      if (enrollment?.completedModules) {
+        setCompletedModules(enrollment.completedModules);
+      }
     } catch (error) {
-      console.error("Failed to update progress:", error);
-      setCompletedModules(completedModules);
+      console.error("❌ Failed to fetch progress:", error);
     }
-    */
   };
 
-  const courseDerived = useMemo(() => {
-    if (!course?.content)
-      return { totalModules: 0, completedCount: 0, percent: 0 };
+  if (learner && courseId) fetchLearnerProgress();
+}, [learner, courseId]);
 
-    const totalModules = course.content.length;
-    const completedCount = completedModules.length;
-    const percent =
-      totalModules === 0 ? 0 : Math.round((completedCount / totalModules) * 100);
 
-    return { totalModules, completedCount, percent };
-  }, [course, completedModules]);
+const courseDerived = useMemo(() => {
+  if (!course?.content)
+    return { totalModules: 0, completedCount: 0, percent: 0 };
+
+  const totalModules = course.content.length;
+  const completedCount = completedModules.length;
+  const percent =
+    totalModules === 0 ? 0 : Math.round((completedCount / totalModules) * 100);
+
+  return { totalModules, completedCount, percent };
+}, [course, completedModules]);
+
 
   const isSelectedModuleCompleted =
     selectedModule && completedModules.includes(selectedModule._id);
