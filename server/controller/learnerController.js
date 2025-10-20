@@ -4,7 +4,7 @@ import Teacher from "../models/teacher.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { updateLearnerStats } from "../services/learnerStats.js";
-
+import dayjs from "dayjs";
 // Register a new learner
 
 export const registerLearner = async (req, res) => {
@@ -128,12 +128,20 @@ export const isAuthLearner = async (req, res) => {
         if (!learner) {
             return res.json({ success: false, message: "learner not found" });
         }
-        return res.json({ success: true, learner: { email: learner.email, name: learner.fullName , id: learner._id , 
-            totalcoursesEnrolled : learner.totalcoursesEnrolled ,
-            totalLearningHours : learner.totalLearningHours , enrollPaths : learner.enrolledPaths ,
-            progress : learner.progress , createdAt : learner.createdAt
+        return res.json({
+  success: true,
+  learner: {
+    email: learner.email,
+    name: learner.fullName,
+    id: learner._id,
+    totalcoursesEnrolled: learner.totalcoursesEnrolled,
+    totalLearningHours: learner.totalLearningHours,
+    enrolledPaths: learner.enrolledPaths, // not enrollPaths
+    progress: learner.progressStats, // or progress if you have it
+    createdAt: learner.createdAt
+  }
+});
 
-        } });
         
     } catch (error) {
         console.error("Error checking authentication:", error);
@@ -159,63 +167,38 @@ export const logoutLearner = async (req, res) => {
 
 
 export const enrollInPath = async (req, res) => {
-    console.log("Enroll in path request body:", req.body);
   try {
-    const { pathId } = req.body;
+    const {pathId } = req.body;
     const studentId = req.userId;
 
-    if (!studentId) return res.status(401).json({ message: "Unauthorized" });
+    
 
-    const learner = await Learner.findById(studentId);
-    if (!learner) return res.status(404).json({ message: "Learner not found" });
-
-    const path = await LearningPath.findById(pathId);
+    // ✅ Fetch path to get module IDs
+    const path = await LearningPath.findById(pathId).lean();
     if (!path) return res.status(404).json({ message: "Learning path not found" });
 
-    const totalModules = path.content?.length;
-    // Add path to learner
-     await Learner.updateOne(
-      { _id: studentId },
+    const moduleIds = path.content?.map((m) => m._id);
+
+    // ✅ Add enrollment entry with all modules listed
+    await Learner.updateOne(
+      { _id: studentId, "enrolledPaths.pathId": { $ne: pathId } }, // prevent duplicate enrollment
       {
-        $addToSet: {
+        $push: {
           enrolledPaths: {
             pathId,
-            totalModules,
-            modulesCompleted: 0,
+            totalModules: moduleIds,
+            completedModules: [],
             progressPercent: 0,
             lastAccessed: new Date(),
           },
         },
-        $inc: { totalcoursesEnrolled: 1 },
       }
     );
 
-    await Teacher.updateOne(
-      { _id: path.createdBy },
-      { $addToSet: { enrolledStudents: studentId } }
-    );
-
-    learner.totalcoursesEnrolled += 1;
-    await learner.save();
-
-
-    // Add learner to teacher's enrolledStudents
-    await Teacher.updateOne(
-      { _id: path.createdBy },
-      { $addToSet: { enrolledStudents: studentId } },
-      { $inc: { totalStudents: 1 } } // increment total students
-    );
-
-    await LearningPath.updateOne(
-        { _id: pathId },
-        { $addToSet: { learners: studentId } }
-    );
-    
-
-    res.status(200).json({ message: "Enrolled successfully!" });
+    res.json({ message: "Enrolled successfully" });
   } catch (error) {
-    console.error("Enrollment error:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error(error);
+    res.status(500).json({ message: "Error enrolling learner" });
   }
 };
 
@@ -301,6 +284,7 @@ export const addLearningHours = async (req, res) => {
 export const getLearnerStats = async (req, res) => {
   try {
     const { learnerId } = req.params;
+    console.log(learnerId)
     await updateLearnerStats(learnerId); // Ensure stats are up-to-date
     const learner = await Learner.findById(learnerId).select(
       "totalLearningHours progressStats learningActivity"
@@ -312,3 +296,102 @@ export const getLearnerStats = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const markModuleCompleted = async (req, res) => {
+  try {
+    const { studentId, pathId, moduleId, action, hoursSpent = 0 } = req.body;
+
+    console.log(hoursSpent)
+
+    if (!studentId || !pathId || !moduleId) {
+      return res.status(400).json({ message: "studentId, pathId and moduleId required" });
+    }
+
+    const learner = await Learner.findById(studentId);
+    if (!learner) return res.status(404).json({ message: "Learner not found" });
+
+    // Find the enrolled path
+    const enrolledPath = learner.enrolledPaths.find(
+      (p) => p.pathId.toString() === pathId
+    );
+    if (!enrolledPath) return res.status(404).json({ message: "Not enrolled in this path" });
+
+    // Add or remove module from completedModules
+    if (action === "remove") {
+      enrolledPath.completedModules = enrolledPath.completedModules.filter(
+        (id) => id.toString() !== moduleId
+      );
+    } else {
+      if (!enrolledPath.completedModules.includes(moduleId)) {
+        enrolledPath.completedModules.push(moduleId);
+      }
+    }
+
+    // Recalculate progress
+    const completed = enrolledPath.completedModules.length;
+    const total = enrolledPath.totalModules.length;
+    enrolledPath.progressPercent = total > 0 ? (completed / total) * 100 : 0;
+    enrolledPath.lastAccessed = new Date();
+
+    // Update learning activity
+    if (hoursSpent > 0) {
+      learner.learningActivity.push({
+        pathId,
+        moduleId,
+        hoursSpent,
+        date: new Date(),
+      });
+
+      // Update totalLearningHours
+      learner.totalLearningHours = learner.learningActivity.reduce(
+        (sum, entry) => sum + entry.hoursSpent,
+        0
+      );
+    }
+
+    await learner.save();
+
+    return res.json({
+      message: action === "remove" ? "Module marked as incomplete" : "Module marked as completed",
+      progress: enrolledPath.progressPercent.toFixed(2) + "%",
+      totalLearningHours: learner.totalLearningHours.toFixed(2),
+    });
+  } catch (error) {
+    console.error("❌ markModuleCompleted error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+export const getLearningProgress = async (req, res) => {
+  try {
+    const { studentId, period } = req.query; // period = "daily" | "weekly"
+    const learner = await Learner.findById(studentId);
+    if (!learner) return res.status(404).json({ message: "Learner not found" });
+
+    const now = new Date();
+    const cutoff = new Date();
+
+    if (period === "weekly") cutoff.setDate(now.getDate() - 7);
+    else cutoff.setDate(now.getDate() - 1);
+
+    const recentPaths = learner.enrolledPaths.filter(
+      (p) => new Date(p.lastAccessed) >= cutoff
+    );
+
+    const totalProgress = recentPaths.reduce(
+      (sum, p) => sum + p.progressPercent,
+      0
+    );
+
+    res.json({
+      totalPaths: recentPaths.length,
+      avgProgress: recentPaths.length > 0 ? (totalProgress / recentPaths.length).toFixed(2) : 0,
+      lastUpdated: now,
+    });
+  } catch (error) {
+    console.error("❌ getLearningProgress error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+

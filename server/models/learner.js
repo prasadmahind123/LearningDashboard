@@ -25,15 +25,15 @@ const learnerSchema = new mongoose.Schema({
   },
 
   // All learning paths enrolled by learner
-  enrolledPaths: [
-    {
-      pathId: { type: mongoose.Schema.Types.ObjectId, ref: "LearningPath" },
-      modulesCompleted: { type: Number, default: 0 },
-      totalModules: { type: Number, default: 0 },
-      progressPercent: { type: Number, default: 0 }, // 0-100%
-      lastAccessed: { type: Date, default: Date.now }
-    },
-  ],
+enrolledPaths: [
+  {
+    pathId: { type: mongoose.Schema.Types.ObjectId, ref: "LearningPath" },
+    completedModules: [{ type: mongoose.Schema.Types.ObjectId , ref:"content"}], // IDs of completed modules
+    totalModules: [{ type: mongoose.Schema.Types.ObjectId }], // IDs of all modules in that path
+    progressPercent: { type: Number, default: 0 }, // auto-calculated from completedModules.length / totalModules.length
+    lastAccessed: { type: Date, default: Date.now },
+  },
+],
 
   // Total summary stats
   totalLearningHours: {

@@ -1,5 +1,6 @@
 import express from 'express';
-import { registerLearner, loginLearner, isAuthLearner, logoutLearner , enrollInPath , getEnrolledPaths , getAllLearners , addLearningHours , getLearnerStats} from '../controller/learnerController.js';
+import { registerLearner, loginLearner, isAuthLearner, logoutLearner , enrollInPath , getEnrolledPaths , getAllLearners , 
+    addLearningHours , getLearnerStats , markModuleCompleted, getLearningProgress} from '../controller/learnerController.js';
 import authLearner from '../middleware/authLearner.js';
 import { upload } from '../config/multer.js';
 
@@ -23,6 +24,10 @@ learnerRouter.get('/getAllLearners' , getAllLearners)
 learnerRouter.get("/stats/:learnerId", getLearnerStats)
 
 learnerRouter.post("/addLearningHours", addLearningHours)
+
+learnerRouter.post("/complete-module", markModuleCompleted)
+
+learnerRouter.get("/progress", getLearningProgress)
 
 
 export default learnerRouter;
