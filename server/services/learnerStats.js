@@ -3,6 +3,7 @@ import Learner from "../models/learner.js";
 
 export const updateLearnerStats = async (learnerId) => {
   const learner = await Learner.findById(learnerId);
+  console.log(learnerId)
   if (!learner) return;
 
   const yesterday = dayjs().subtract(1, "day").startOf("day");

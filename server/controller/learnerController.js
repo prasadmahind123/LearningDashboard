@@ -172,12 +172,22 @@ export const enrollInPath = async (req, res) => {
     const path = await LearningPath.findById(pathId);
     if (!path) return res.status(404).json({ message: "Learning path not found" });
 
+    const totalModules = path.content?.length;
     // Add path to learner
-    await Learner.updateOne(
+     await Learner.updateOne(
       { _id: studentId },
-      { $addToSet: { enrolledPaths: pathId } } ,// avoids duplicates,
-      { $inc: { totalcoursesEnrolled: 1 } } // increment counters
-
+      {
+        $addToSet: {
+          enrolledPaths: {
+            pathId,
+            totalModules,
+            modulesCompleted: 0,
+            progressPercent: 0,
+            lastAccessed: new Date(),
+          },
+        },
+        $inc: { totalcoursesEnrolled: 1 },
+      }
     );
 
     await Teacher.updateOne(
