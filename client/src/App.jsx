@@ -1,6 +1,6 @@
 import { Routes , Route } from "react-router-dom"
 import { useLocation } from "react-router-dom";
-import Navbar from "./components/Navbar";
+import Header from "./components/Navbar";
 import Footer from "./components/Footer";
 import Login from "./components/Login";
 import Register from "./components/Register";
@@ -35,7 +35,7 @@ function App() {
   return (
     <div>
       {showUserLogin ? <Login /> : null}
-      {!hideNavFooter ? <Navbar /> : null}
+      {!hideNavFooter ? <Header /> : null}
       <div>
         <Routes>
           <Route path="/" element={<Home />} />

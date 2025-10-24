@@ -1,6 +1,8 @@
 import { Clock, Star, Users } from "lucide-react"
 import { useAppContext } from '../context/AppContext';
 import { Button } from './ui/button';
+import { Link } from "react-router-dom";
+import { HeroParallax } from "./ui/hero-parallax";
 export default function Courses() {
   const { paths } = useAppContext();
 
@@ -30,8 +32,8 @@ export default function Courses() {
   return (
     <div>
 
-            
-      <section className="py-16 px-4">
+        <HeroParallax products={paths} />;
+      {/* <section className="py-16 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Featured paths</h2>
@@ -78,7 +80,7 @@ export default function Courses() {
                       <span className="text-2xl font-bold">${course.price}</span>
                     </div>
                     <Button variant={"outline"} >
-                      <p href={`/course/${course.id}`}>View path</p>
+                      <Link to={`/courses/learning-path/${course._id}`}>View path</Link>
                     </Button>
                   </div>
                 </div>
@@ -86,7 +88,7 @@ export default function Courses() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
     </div>
   )

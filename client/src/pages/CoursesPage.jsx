@@ -72,8 +72,8 @@ export default function CoursesPage() {
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="py-12 px-4 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">All Learning Paths</h1>
+        <div className="h-[50vh] mx-auto max-w-4xl text-center flex flex-col justify-center items-center">
+          <h1 className="text-4xl md:text-5xl font-bold m-4">All Learning Paths</h1>
           <p className="text-xl text-muted-foreground mb-8">
             Discover our complete collection of learning paths designed by industry experts
           </p>

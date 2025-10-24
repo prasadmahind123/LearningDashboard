@@ -5,28 +5,94 @@ import { BookOpen, Clock, Star, Users, ArrowRight, CheckCircle, Zap, Award, Tren
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { NavLink } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-const features = [
+import { BackgroundLines } from '@/components/ui/background-lines'
+import { AuroraBackground } from '@/components/ui/aurora-background'
+import { StickyScroll } from '@/components/ui/sticky-scroll-reveal'
+import { motion } from "motion/react";
+
+
+const content = [
   {
-    icon: <BookOpen className="h-8 w-8" />,
-    title: "Expert-Led Courses",
-    description: "Learn from industry professionals with years of real-world experience.",
+    title: "Personalized Dashboards",
+    description:
+      "Access dedicated dashboards tailored for learners, teachers, and administrators. Learners track progress and manage enrolled paths, while teachers monitor student engagement, revenue, and manage their created paths.",
+    content: (
+      <div className="flex h-full w-full items-center justify-center text-white">
+        <img
+          src="/dashboards.png"
+          width={300}
+          height={300}
+          className="h-full w-full object-cover"
+          alt="linear board demo"
+        />
+      </div>
+    ),
   },
   {
-    icon: <Zap className="h-8 w-8" />,
-    title: "Self-Paced Learning",
-    description: "Study at your own pace with lifetime access to course materials.",
+    title: "Learning Path Creation",
+    description:
+      "Teachers can easily create and manage comprehensive learning paths. Upload various content types including videos, PDFs, documents, and structure them into engaging modules with descriptions and duration estimates.",
+    content: (
+      <div className="flex h-full w-full items-center justify-center text-white">
+        <img
+          src="/create.png"
+          width={300}
+          height={300}
+          className="h-full w-full object-cover"
+          alt="linear board demo"
+        />
+      </div>
+    ),
+  },
+   {
+    title: "Progress Tracking",
+    description:
+      "Learners can monitor their progress through learning paths, see completed modules, track hours learned, and view earned certificates. Teachers get insights into student completion rates and overall engagement.",
+    content: (
+      <div className="flex h-full w-full items-center justify-center text-white">
+        <img
+          src="/progress.png"
+          width={300}
+          height={300}
+          className="h-full w-full object-cover"
+          alt="linear board demo"
+        />
+      </div>
+    ),
+  },
+   {
+    title: "Admin Management Panel",
+    description:
+      "A powerful backend for administrators to manage users (learners and teachers), approve teacher applications, moderate content, view reports, and oversee the entire platform's health and activity.",
+    content: (
+      <div className="flex h-full w-full items-center justify-center text-white">
+        <img
+          src="/dashboards.png"
+          width={300}
+          height={300}
+          className="h-full w-full object-cover"
+          alt="linear board demo"
+        />
+      </div>
+    ),
   },
   {
-    icon: <Award className="h-8 w-8" />,
-    title: "Recognized Certificates",
-    description: "Earn industry-recognized certificates upon course completion.",
-  },
-  {
-    icon: <TrendingUp className="h-8 w-8" />,
-    title: "Career Growth",
-    description: "Get job-ready skills that lead to career advancement and higher salaries.",
-  },
-]
+    title: "Browse & Enroll",
+    description:
+      "Discover a wide range of learning paths across various categories and levels. Filter by topic, difficulty, or price, view detailed course information, and enroll easily with optional access codes for private or paid content.",
+    content: (
+      <div className="flex h-full w-full items-center justify-center text-white">
+        <img
+          src="/Browse.png"
+          width={300}
+          height={300}
+          className="h-full w-full object-cover"
+          alt="linear board demo"
+        />
+      </div>
+    ),
+   },
+];
 
 export default function Home() {
   const {learners , paths , teachers , learner} = useAppContext();
@@ -34,14 +100,25 @@ export default function Home() {
   
   return (
     <div>
-       <section className="py-20 px-4 text-center bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="container mx-auto max-w-4xl">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">Learn Without Limits</h1>
-          <p className="text-xl  mb-8 max-w-2xl mx-auto text-gray-500 ">
-            Access thousands of courses from expert instructors. Build skills that matter for your career and personal
+      <AuroraBackground>
+      <motion.div
+        initial={{ opacity: 0.0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{
+          delay: 0.3,
+          duration: 0.8,
+          ease: "easeInOut",
+        }}
+        className="relative flex flex-col gap-4 items-center justify-center px-4"
+      ></motion.div>
+      
+        <div className="container mx-auto max-w-4xl text-center flex flex-col justify-center items-center min-h-screen relative">
+          <h1 className="text-3xl md:text-7xl font-bold dark:text-white text-center">Learn Without Limits</h1>
+          <p className="font-extralight text-base md:text-4xl dark:text-neutral-200 py-4 ">
+            Access thousands of paths from expert instructors. Build skills that matter for your career and personal
             growth.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
             <Button variant={"outline"}>
               
               <NavLink to="/courses" >
@@ -66,44 +143,18 @@ export default function Home() {
 
           </div>
         </div>
-      </section>
-        <section className="py-20 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Why Choose EduPlatform?</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              We provide everything you need to succeed in your learning journey
-            </p>
-          </div>
+      </AuroraBackground>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {features.map((feature, idx) => (
-              <Card
-                key={idx}
-                className="border border-border hover:border-primary/50 hover:shadow-lg transition-all group"
-              >
-                <CardContent className="pt-6">
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                        {feature.icon}
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                      <p className="text-muted-foreground">{feature.description}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+
+      <section className="h-screen flex items-center justify-center w-full flex-col p-4"  >
+        <div className="w-full py-4">
+          <StickyScroll content={content} />
         </div>
       </section>
       <Courses/>
     
             {/* Stats Section */}
-      <section className="py-16 px-4  bg-blue-50 rounded-lg p-15">
+      <section className="flex items-center justify-center w-full flex-col px-4" >
         <div className=" mx-auto ">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <div>
