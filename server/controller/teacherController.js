@@ -199,3 +199,12 @@ export const getEnrolledStudents = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+export const getAllTeachers = async (req, res) => {
+  try {
+    const teachers = await Teacher.find();
+    res.json({ success: true, teachers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch teachers" });
+  }
+};
