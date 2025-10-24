@@ -353,18 +353,34 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // const fetchAllLearners = async () =>{
-  //   try {
-  //     const {data} = await axios.get('/api/learner/getAllLearners')
-  //     if(data.success && Array.isArray(data.learners)){
-  //       setLearners(data.learners);
-  //     }else{
-  //       setLearners([]);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching Learners :", error);
-  //   }
-  // }
+  const fetchAllLearners = async () =>{
+    try {
+      const {data} = await axios.get('/api/learner/getAllLearners')
+      if(data.success && Array.isArray(data.learners)){
+        setLearners(data.learners);
+      }else{
+        setLearners([]);
+      }
+    } catch (error) {
+      console.error("Error fetching Learners :", error);
+    }
+  } 
+   const fetchAllTeachers = async () =>{
+    try {
+      const {data} = await axios.get('/api/teacher/getAllTeachers')
+      if(data.success && Array.isArray(data.teachers)){
+        setTeachers(data.teachers);
+      }else{
+        setTeachers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching Teachers :", error);
+    }
+  }
+  useEffect(()=>{
+    fetchAllLearners();
+    fetchAllTeachers();
+  })
 
   const fetchEnrolledLearners = async () =>{
     try {

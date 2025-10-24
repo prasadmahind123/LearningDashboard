@@ -43,6 +43,7 @@ import {
   BookOpen,
   Download,
 } from "lucide-react";
+import { Loader } from "@/components/Loader.jsx";
 
 const fileTypeIcons = {
   pdf: FileText,
@@ -67,6 +68,7 @@ export default function CourseDetails() {
 
   const [selectedModuleIndex, setSelectedModuleIndex] = useState(0);
   const [completedModules, setCompletedModules] = useState([]);
+  const [isLoading , setIsLoading] = useState(false);
   const moduleStartTime = useRef(null);
   const heartbeatTimer = useRef(null);
 
@@ -148,6 +150,7 @@ export default function CourseDetails() {
 
   const toggleComplete = async (moduleId) => {
   try {
+    setIsLoading(true);
     const isCompleted = completedModules.includes(moduleId);
 
     // Toggle locally for UI response
@@ -170,12 +173,15 @@ export default function CourseDetails() {
     console.log("✅ Progress updated:", res.data);
   } catch (error) {
     console.error("❌ Failed to update progress:", error);
+  } finally{
+    setIsLoading(false);
   }
 };
 
 useEffect(() => {
   const fetchLearnerProgress = async () => {
     try {
+      setIsLoading(true);
       const res = await axios.get(`/api/learner/progress/${learner._id}/${courseId}`);
       const enrollment = res.data.enrolledPath;
 
@@ -184,6 +190,8 @@ useEffect(() => {
       }
     } catch (error) {
       console.error("❌ Failed to fetch progress:", error);
+    } finally{
+      setIsLoading(false);
     }
   };
 
@@ -228,6 +236,12 @@ const courseDerived = useMemo(() => {
         </Card>
       </div>
     );
+  }
+
+  if(isLoading){
+    return(
+      <Loader/>
+    )
   }
 
   return (
