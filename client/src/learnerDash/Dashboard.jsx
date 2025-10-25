@@ -1,3 +1,4 @@
+// prasadmahind123/learningdashboard/LearningDashboard-e45f05146a782b48485168fb39580fcf72aca81e/client/src/learnerDash/Dashboard.jsx
 
 import { useEffect, useState  } from "react"
 import { Button } from "@/components/ui/button"
@@ -41,7 +42,6 @@ const recentActivity = [
 export default function Dashboard() {
   const { learner , paths } = useAppContext();
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const enrolledcourses = learner?.enrolledPaths || [];
   const [chatMessages, setChatMessages] = useState([
     {
       id: 1,
@@ -57,7 +57,10 @@ export default function Dashboard() {
   const [learnerPaths, setLearnerPaths] = useState(learner?.enrolledPaths || []); // paths enrolled by logged-in learner
 
   useEffect(() => {
-    if (!learner?.enrolledPaths?.length || !paths?.length) return;
+    if (!learner?.enrolledPaths?.length || !paths?.length) {
+       if (learner && !learner.enrolledPaths?.length) setLearnerPaths([]);
+       return;
+    }
 
     // Map enrolledPaths to their actual path objects and include enrollment info
     const mapped = learner.enrolledPaths
@@ -146,14 +149,19 @@ export default function Dashboard() {
   }
 
 
-
-
-  const hoursLearned = learner?.learningHours || 0;
-  const certificatesEarned = learner?.certificates?.length || 0;
-  const averageProgress = enrolledcourses && enrolledcourses.length > 0
-    ? Math.round(enrolledcourses.reduce((total, course) => total + (course.progress || 0), 0) / enrolledcourses.length)
+  // --- UPDATED STATS CALCULATION ---
+  const hoursLearned = learner?.totalLearningHours || 0; // Use totalLearningHours from schema
+  const certificatesEarned = learner?.analytics?.certificatesEarned || 0; // Use analytics if available, or default to 0
+  
+  const totalProgressSum = learnerPaths.reduce((total, course) => total + (course.enrollment?.progressPercent || 0), 0);
+  const averageProgress = learnerPaths.length > 0
+    ? Math.round(totalProgressSum / learnerPaths.length)
     : 0;
-  const eligibleCertificates = enrolledcourses ? enrolledcourses.filter((c) => c.progress >= 90).length : 0;
+
+  const eligibleCertificates = learnerPaths.filter(
+    (c) => (c.enrollment?.progressPercent || 0) >= 90
+  ).length;
+
 
   return (
     <div className="no-scrollbar flex-1 h-[95vh] overflow-y-scroll flex flex-col justify-between">
@@ -174,8 +182,8 @@ export default function Dashboard() {
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{learner?.enrolledPaths?.length || 0}</div>
-              <p className="text-xs text-muted-foreground">{learner?.enrolledPaths?.length || 0} completed</p>
+              <div className="text-2xl font-bold">{learnerPaths.length || 0}</div> {/* Use learnerPaths.length */}
+              <p className="text-xs text-muted-foreground">{eligibleCertificates} near completion</p>
             </CardContent>
           </Card>
 
@@ -185,7 +193,7 @@ export default function Dashboard() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{hoursLearned}</div>
+              <div className="text-2xl font-bold">{hoursLearned.toFixed(1)}</div> {/* Display hours learned */}
             </CardContent>
           </Card>
 
@@ -207,7 +215,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{averageProgress}%</div>
-              <p className="text-xs text-muted-foreground">+5% from last week</p>
+              <p className="text-xs text-muted-foreground">Across all enrolled paths</p>
             </CardContent>
           </Card>
         </div>
@@ -223,7 +231,7 @@ export default function Dashboard() {
                 <CardContent className="space-y-4">
                   {learnerPaths.map((course) => (
                     <div
-                      key={course.id}
+                      key={course._id} // Use _id from the path object
                       className="flex items-center space-x-4 p-4 border rounded-lg hover:shadow-md transition-shadow"
                     >
                       <img
@@ -237,7 +245,7 @@ export default function Dashboard() {
                           <Badge variant="outline" className="text-xs">
                             {course.level}
                           </Badge>
-                          {course.certificateEligible && (
+                          {course.enrollment?.progressPercent >= 90 && ( // Use enrollment progress
                             <Badge className="text-xs bg-green-500">
                               <Award className="h-3 w-3 mr-1" />
                               Certificate Ready
@@ -249,11 +257,11 @@ export default function Dashboard() {
                           <div className="flex-1">
                             <div className="flex justify-between text-sm mb-1">
                               <span>
-                                {course.content?.length} lessons
+                                {course.content?.length || 0} modules
                               </span>
-                              <span>{course.progress}%</span>
+                              <span>{course.enrollment?.progressPercent.toFixed(0) || 0}%</span> {/* Use enrollment progress */}
                             </div>
-                            <Progress value={course.progress} className="h-2" />
+                            <Progress value={course.enrollment?.progressPercent || 0} className="h-2" />
                           </div>
                         </div>
                       </div>
@@ -266,10 +274,13 @@ export default function Dashboard() {
                             </Button>
                           </Link>
                           
-                          <Button size="sm" variant="outline" className = "cursor-pointer">
-                            <Play className="h-3 w-3 mr-1 cursor-pointer" />
-                            Continue
-                          </Button>
+                          <Link to={`/mycourses/${course._id}`}>
+                             <Button size="sm" variant="outline" className = "cursor-pointer">
+                                <Play className="h-3 w-3 mr-1 cursor-pointer" />
+                                Continue
+                              </Button>
+                          </Link>
+                         
                         </div>
                       </div>
                     </div>
@@ -278,7 +289,7 @@ export default function Dashboard() {
               </Card>
             </div>
 
-            {/* Enhanced Sidebar */}
+            {/* Enhanced Sidebar (simplified placeholder content) */}
             <div className="space-y-6">
               {/* Study Goals */}
               <Card>
@@ -289,18 +300,17 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {enrolledcourses.slice(0, 2).map((course) => (
-                    <div key={course.id} className="space-y-2">
+                   <p className="text-muted-foreground">Goal tracking logic not implemented yet in backend.</p>
+                   {/* Placeholder loop using first two enrolled paths */}
+                  {learnerPaths.slice(0, 2).map((course) => (
+                    <div key={course._id} className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="truncate">{course.title}</span>
-                        <span>
-                          {/* {course.studyPlan.currentWeekHours}h / {course.studyPlan.weeklyGoal}h */}
-                        </span>
                       </div>
-                      {/* <Progress
-                        value={(course.studyPlan.currentWeekHours / course.studyPlan.weeklyGoal) * 100}
-                        className="h-2"
-                      /> */}
+                      <Progress
+                         value={course.enrollment?.progressPercent || 0}
+                         className="h-2"
+                      />
                     </div>
                   ))}
                 </CardContent>
@@ -343,12 +353,13 @@ export default function Dashboard() {
                   <CardTitle>Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start bg-transparent cursor-pointer" asChild>
-                    <p>
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Browse New learning paths
-                    </p>
-                  </Button>
+                  <Link to="/courses">
+                     <Button variant="outline" className="w-full justify-start bg-transparent cursor-pointer">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Browse New learning paths
+                    </Button>
+                  </Link>
+                  
                   <Button variant="outline" className="w-full justify-start bg-transparent cursor-pointer">
                     <Calendar className="mr-2 h-4 w-4" />
                     Schedule Study Time
@@ -357,16 +368,19 @@ export default function Dashboard() {
                     <Trophy className="mr-2 h-4 w-4" />
                     View Certificates
                   </Button>
-                  <Button variant="outline" className="w-full justify-start bg-transparent cursor-pointer">
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    Progress Analytics
-                  </Button>
+                  <Link to="/learner/progress">
+                      <Button variant="outline" className="w-full justify-start bg-transparent cursor-pointer">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Progress Analytics
+                      </Button>
+                  </Link>
+                  
                 </CardContent>
               </Card>
             </div>
           </div>
 
-          {/* Enhanced Detailed course View Dialog */}
+          {/* Enhanced Detailed course View Dialog (using mock data in dialog for now) */}
           {selectedcourse && (
             <Dialog open={!!selectedcourse} onOpenChange={() => setSelectedcourse(null)}>
               <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto ">
