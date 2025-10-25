@@ -24,20 +24,7 @@ export default function Progress() {
   }, [learner]);
   return (
     <div>
-      <h2>Learning Progress</h2>
-      <BarChart
-        width={500}
-        height={300}
-        data={chartData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-      >
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
-        <Tooltip />
-        <Legend />
-        <Bar dataKey="hours" fill="#8884d8" />
-      </BarChart>
+    
     </div>
   )
 }

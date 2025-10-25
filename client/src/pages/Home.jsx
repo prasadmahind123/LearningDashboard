@@ -113,7 +113,7 @@ export default function Home() {
         }}
         className="relative flex flex-col gap-4 items-center justify-center px-4"
       ></motion.div>
-      
+      <div className='flex'>
         <div className="container mx-auto max-w-4xl text-center flex flex-col justify-center items-center min-h-screen relative">
           <h1 className="text-3xl md:text-7xl font-bold dark:text-white text-center">Learn Without Limits</h1>
           <p className="font-extralight text-base md:text-4xl dark:text-neutral-200 py-4 ">
@@ -145,6 +145,9 @@ export default function Home() {
 
           </div>
         </div>
+
+      </div>
+        
       </AuroraBackground>
 
       <FadeInSection>
@@ -160,7 +163,7 @@ export default function Home() {
       <FadeInSection>
         <AnimatedStatsCards/>
       </FadeInSection>
-      
+              
       
     
             {/* Stats Section */}
