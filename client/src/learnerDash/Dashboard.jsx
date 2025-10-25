@@ -41,7 +41,7 @@ const recentActivity = [
 export default function Dashboard() {
   const { learner , paths } = useAppContext();
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const enrolledcourses = learner?.enrollPaths || [];
+  const enrolledcourses = learner?.enrolledPaths || [];
   const [chatMessages, setChatMessages] = useState([
     {
       id: 1,
@@ -54,17 +54,25 @@ export default function Dashboard() {
   const [chatInput, setChatInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [selectedcourse, setSelectedcourse] = useState(null)
-  const [learnerPaths, setLearnerPaths] = useState(learner?.enrollPaths || []); // paths enrolled by logged-in learner
+  const [learnerPaths, setLearnerPaths] = useState(learner?.enrolledPaths || []); // paths enrolled by logged-in learner
 
   useEffect(() => {
-      if (!learner?.enrollPaths?.length || !paths?.length) return;
+    if (!learner?.enrolledPaths?.length || !paths?.length) return;
 
-      const learnerPaths = paths.filter((p) =>
-      learner.enrollPaths.includes(p._id)
-    );
+    // Map enrolledPaths to their actual path objects and include enrollment info
+    const mapped = learner.enrolledPaths
+      .map((enroll) => {
+        const pathObj = paths.find((p) => p._id === enroll.pathId);
+        if (!pathObj) return null;
+        return {
+          ...pathObj,
+          enrollment: enroll, // attach enrollment info
+        };
+      })
+      .filter(Boolean);
 
-    setLearnerPaths(learnerPaths)
-  }, [paths , learner]);
+    setLearnerPaths(mapped);
+  }, [paths, learner]);
 
 
   
@@ -236,25 +244,18 @@ export default function Dashboard() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          by {course.instructor} • Grade: {course.overallGrade}
-                        </p>
+
                         <div className="flex items-center space-x-4 mb-2">
                           <div className="flex-1">
                             <div className="flex justify-between text-sm mb-1">
                               <span>
-                                {course.completedLessons}/{course.totalLessons} lessons
+                                {course.content?.length} lessons
                               </span>
                               <span>{course.progress}%</span>
                             </div>
                             <Progress value={course.progress} className="h-2" />
                           </div>
                         </div>
-                        <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                          <span>📚 {course.timeSpent} spent</span>
-                          <span>⏰ {course.estimatedTimeLeft} left</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">Next: {course.nextLesson}</p>
                       </div>
                       <div className="text-right space-y-2">
                         <div className="flex space-x-2">
