@@ -44,7 +44,7 @@ import {
   Download,
 } from "lucide-react";
 import { Loader } from "@/components/Loader.jsx";
-
+import toast , {Toaster} from "react-hot-toast";
 const fileTypeIcons = {
   pdf: FileText,
   video: FileVideo,
@@ -152,14 +152,13 @@ export default function CourseDetails() {
   try {
     setIsLoading(true);
     const isCompleted = completedModules.includes(moduleId);
-
     // Toggle locally for UI response
     const updatedModules = isCompleted
       ? completedModules.filter((id) => id !== moduleId)
       : [...completedModules, moduleId];
 
     setCompletedModules(updatedModules);
-    console.log(learner.id)
+    
 
     // ✅ Call backend to update learner progress
     const res = await axios.post("/api/learner/complete-module", {
@@ -169,10 +168,16 @@ export default function CourseDetails() {
       action: isCompleted ? "remove" : "add", // optional to handle unmarking
     }, { withCredentials: true }
   );
-
-    console.log("✅ Progress updated:", res.data);
+  
+    if(res.data.message === 'Module marked as incomplete'){
+      toast.error("Unmarked")
+    }else{
+      toast.success("Marked")
+    }
+  
+    
   } catch (error) {
-    console.error("❌ Failed to update progress:", error);
+    console.log("❌ Failed to update progress:", error);
   } finally{
     setIsLoading(false);
   }
@@ -189,14 +194,14 @@ useEffect(() => {
         setCompletedModules(enrollment.completedModules);
       }
     } catch (error) {
-      console.error("❌ Failed to fetch progress:", error);
+       console.log("❌ Failed to fetch progress:", error);
     } finally{
       setIsLoading(false);
     }
   };
 
   if (learner && courseId) fetchLearnerProgress();
-}, [learner, courseId]);
+}, [learner, courseId , axios]);
 
 
 const courseDerived = useMemo(() => {
@@ -218,6 +223,7 @@ const courseDerived = useMemo(() => {
   if (!course) {
     return (
       <div className="min-h-screen grid place-items-center p-6">
+
         <Card className="max-w-lg">
           <CardHeader>
             <CardTitle>Course Not Found</CardTitle>
@@ -521,6 +527,7 @@ const courseDerived = useMemo(() => {
             </div>
           )}
         </main>
+        <Toaster />
       </SidebarInset>
     </SidebarProvider>
   );

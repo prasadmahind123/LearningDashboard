@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BookOpen, Clock, Star, Users, Globe, Award, ShoppingCart } from "lucide-react";
 import { useAppContext } from "../context/AppContext.jsx";
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function CourseID() {
   const { paths , learner , axios } = useAppContext();
@@ -56,7 +57,7 @@ useEffect(() => {
 
     // If course is paid and no access code, redirect for payment
     if (path.price && path.price > 0 && !accessCode) {
-      alert(`This course costs $${path.price}. Redirecting to payment...`);
+      toast.loading(`This course costs $${path.price}. Redirecting to payment...`);
       // 👉 integrate Stripe/PayPal/Razorpay here
       return;
     }
@@ -77,7 +78,7 @@ useEffect(() => {
 
     setIsEnrolled(true);
     setErrorMsg("");
-    alert(
+    toast.success(
       `You have been enrolled in ${path.title}${
         accessCode ? " using access code!" : "!"
       }`
@@ -277,6 +278,7 @@ useEffect(() => {
           </div>
         </section>
       )}
+      <Toaster />
     </div>
   );
 }
