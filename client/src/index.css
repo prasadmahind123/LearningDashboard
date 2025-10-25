@@ -2,6 +2,28 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+
+/* Add this to your src/index.css */
+
+.fade-in-section {
+  opacity: 0;
+  transform: translateY(200px); /* Optional: slight upward move effect */
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  will-change: opacity, transform; /* Optimize animation performance */
+}
+
+.fade-in-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Ensure animations are respected */
+@layer utilities {
+  @variants responsive {
+    /* Add other utilities if needed */
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 *{

@@ -9,6 +9,8 @@ import { BackgroundLines } from '@/components/ui/background-lines'
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import { StickyScroll } from '@/components/ui/sticky-scroll-reveal'
 import { motion } from "motion/react";
+import AnimatedStatsCards from '@/components/AnimatedCaed'
+import FadeInSection from '@/components/FadeInSection'
 
 
 const content = [
@@ -145,16 +147,24 @@ export default function Home() {
         </div>
       </AuroraBackground>
 
-
-      <section className="h-screen flex items-center justify-center w-full flex-col p-4"  >
-        <div className="w-full py-4">
-          <StickyScroll content={content} />
-        </div>
-      </section>
-      <Courses/>
+      <FadeInSection>
+        <section className="h-screen flex items-center justify-center w-full flex-col p-4"  >
+          <div className="w-full py-4">
+            <StickyScroll content={content} />
+          </div>
+        </section>
+      </FadeInSection>
+      <FadeInSection>
+        <Courses/>
+      </FadeInSection>
+      <FadeInSection>
+        <AnimatedStatsCards/>
+      </FadeInSection>
+      
+      
     
             {/* Stats Section */}
-      <section className="flex items-center justify-center w-full flex-col px-4" >
+      {/* <section className="flex items-center justify-center w-full flex-col px-4" >
         <div className=" mx-auto ">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <div>
@@ -175,7 +185,9 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
+
+      
     </div>
   )
 }
