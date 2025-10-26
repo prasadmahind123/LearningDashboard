@@ -28,7 +28,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppContext } from "../context/AppContext.jsx"
 import { Link } from "react-router-dom"
-import { useLoading } from "@/context/LoadingContext.jsx"
+
 
 
 const recentActivity = [
@@ -43,8 +43,6 @@ const recentActivity = [
 export default function Dashboard() {
   const { learner , paths } = useAppContext();
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const { showLoader, hideLoader } = useLoading();
-  const [data, setData] = useState([]);
   const [chatMessages, setChatMessages] = useState([
     {
       id: 1,
@@ -81,22 +79,6 @@ export default function Dashboard() {
   }, [paths, learner]);
 
 
-    useEffect(() => {
-    const fetchData = async () => {
-      showLoader();
-      try {
-        const res = await fetch("/api/data"); // your backend API
-        const json = await res.json();
-        setData(json);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        hideLoader();
-      }
-    };
-
-    fetchData();
-  }, []);
 
 
   const handleChatSubmit = async (e) => {

@@ -171,16 +171,16 @@ export default function MyCourses() {
       <section className="py-12 px-14">
         <div className="container mx-auto">
           {paginatedPaths.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center p-12">
               <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">No learning paths found</h3>
               <p className="text-muted-foreground">Try adjusting your search or filter criteria</p>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 px-8">
                 {paginatedPaths.map((course) => (
-                  <Card key={course._id} className="w-fit overflow-hidden hover:shadow-lg transition-shadow">
+                  <Card key={course._id} className="w-fit overflow-hidden hover:shadow-lg transition-shadow ">
                     <div className="aspect-video relative">
                       <img
                         src={course.image || "/placeholder.svg"}
