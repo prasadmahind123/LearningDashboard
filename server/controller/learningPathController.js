@@ -631,6 +631,8 @@ export const createLearningPath = async (req, res) => {
 
     for (let i = 0; i < parsedContent.length; i++) {
       const moduleData = parsedContent[i];
+      // Find descriptions for files in this module
+      const fileDescriptions = moduleData.fileDescriptions || [];
 
       const newModule = {
         title: moduleData.title || "",
@@ -655,6 +657,11 @@ export const createLearningPath = async (req, res) => {
       for (const file of moduleFiles) {
         try {
           const uploadResult = await uploadFile(file.path, "auto");
+          
+          // Find description for this file
+          const descObj = fileDescriptions.find(d => d.fileName === file.originalname);
+          const fileDescription = descObj ? descObj.description : "";
+
           newModule.resources.push({
             fileUrl: uploadResult.url,
             fileName: file.originalname,
@@ -662,6 +669,7 @@ export const createLearningPath = async (req, res) => {
             format: uploadResult.format,
             size: uploadResult.bytes,
             publicId: uploadResult.publicId,
+            description: fileDescription, // <-- Added description
           });
         } catch (error) {
           console.error("File upload failed:", error.message);
@@ -807,6 +815,7 @@ export const updateLearningPath = async (req, res) => {
 
     for (let i = 0; i < parsedContent.length; i++) {
       const moduleData = parsedContent[i];
+      const fileDescriptions = moduleData.fileDescriptions || []; // Get descriptions
       let module = path.content[i] || {};
 
       module.title = moduleData.title || module.title;
@@ -830,6 +839,11 @@ export const updateLearningPath = async (req, res) => {
       for (const file of moduleFiles) {
         try {
           const uploadResult = await uploadFile(file.path, "auto");
+          
+          // Find description for this file
+          const descObj = fileDescriptions.find(d => d.fileName === file.originalname);
+          const fileDescription = descObj ? descObj.description : "";
+          
           module.resources.push({
             fileUrl: uploadResult.url,
             fileName: file.originalname,
@@ -837,6 +851,7 @@ export const updateLearningPath = async (req, res) => {
             format: uploadResult.format,
             size: uploadResult.bytes,
             publicId: uploadResult.publicId,
+            description: fileDescription, // <-- Added description
           });
         } catch (error) {
           console.error("File upload failed:", error.message);
@@ -853,7 +868,6 @@ export const updateLearningPath = async (req, res) => {
     res.status(500).json({ message: "Failed to update learning path", error: error.message });
   }
 };
-
 // 🧠 Delete a learning path
 export const deleteLearningPath = async (req, res) => {
   try {
