@@ -34,7 +34,7 @@ import {
   FileArchive,
   FileAudio,
   FileSpreadsheet,
-  FileText,
+  FileText ,
   FileVideo,
   ImageIcon,
   Globe,
@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { Loader } from "@/components/Loader.jsx";
 import toast, { Toaster } from "react-hot-toast";
+import { cn } from "@/lib/utils";
 
 // dialog from your UI (used for AI modal)
 import {
@@ -260,6 +261,25 @@ export default function CourseDetails() {
     return { totalModules, completedCount, percent };
   }, [course, completedModules]);
 
+  // Dynamically assign colors based on completion %
+  let progressColorClass = "";
+  let textColorClass = "";
+
+  if (courseDerived.percent <= 25) {
+    progressColorClass = "bg-red-500";
+    textColorClass = "text-red-600";
+  } else if (courseDerived.percent <= 50) {
+    progressColorClass = "bg-yellow-500";
+    textColorClass = "text-yellow-600";
+  } else if (courseDerived.percent <= 75) {
+    progressColorClass = "bg-blue-500";
+    textColorClass = "text-blue-600";
+  } else {
+    progressColorClass = "bg-green-500";
+    textColorClass = "text-green-600";
+}
+
+
   const isSelectedModuleCompleted = selectedModule && completedModules.includes(selectedModule._id);
 
   // video helpers
@@ -337,12 +357,22 @@ export default function CourseDetails() {
             </div>
           </div>
           <div className="px-2">
-            <Progress value={courseDerived.percent} className="h-2" />
+            <Progress
+        value={courseDerived.percent}
+        color="rgb(80,200,120)"
+        className="h-2 transition-all duration-500"
+      />
+
             <div className="flex justify-between text-muted-foreground mt-1">
-              <span>{courseDerived.completedCount}/{courseDerived.totalModules} modules</span>
-              <span>{courseDerived.percent}%</span>
+              <span className="text-sm">
+                {courseDerived.completedCount}/{courseDerived.totalModules} modules
+              </span>
+              <span className={cn("text-sm font-medium", textColorClass)}>
+                {courseDerived.percent}%
+              </span>
             </div>
           </div>
+
         </SidebarHeader>
 
         <SidebarContent>
@@ -362,12 +392,15 @@ export default function CourseDetails() {
                       key={module._id || index}
                       active={selectedModuleIndex === index}
                       onClick={() => handleSelectModule(index)}
-                      className="cursor-pointer"
+                      className={cn(
+                        "cursor-pointer rounded-md p-2", // Added padding and rounded-md
+                        selectedModuleIndex === index ? "bg-gray-100" : "" // Apply bg-accent if active
+                      )}
                     >
                       <div className="flex items-center justify-start mt-1 w-full">
                         <div className="flex items-center gap-5 w-full">
                           <Icon color="#e60505" className="h-4 w-4" />
-                          <span className="py-1 text-lg font-medium hover:text-emerald-500">{module.title || `Module ${index + 1}`}</span>
+                          <span className="py-1 text-md font-medium hover:text-emerald-500">{module.title || `Module ${index + 1}`}</span>
                         </div>
                         {isCompleted && <CheckCircle className="h-4 w-4 text-green-500" />}
                       </div>
@@ -532,8 +565,8 @@ export default function CourseDetails() {
                           <div key={res._id || idx} className="flex items-center gap-3 p-2 hover:bg-accent/50 rounded-md">
                             <ResIcon color="#e60505" className="h-5 w-5 text-muted-foreground" />
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{res.fileName || res.fileUrl}</div>
-                              <div className="text-xs text-muted-foreground truncate">{res.fileType} • {res.format || ""}</div>
+                              <div className="font-medium truncate">{idx + 1}.  {res.fileName || res.fileUrl}</div>
+                              <div className="text-xs text-muted-foreground truncate">{res.description}</div>
                             </div>
 
                             <div className="flex items-center gap-2">

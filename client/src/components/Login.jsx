@@ -22,7 +22,7 @@ export default function Login() {
 const handleLogin = async (e) => {
   e.preventDefault();
   try {
-    const { data } = await axios.post(`/api/Rs{userType}/login`, { email, password });
+    const { data } = await axios.post(`/api/${userType}/login`, { email, password });
 
     if (data.success) {
       if (userType === "teacher") {

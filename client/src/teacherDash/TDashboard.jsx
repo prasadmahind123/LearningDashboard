@@ -22,6 +22,7 @@ import {
   BookOpen,Users,DollarSign,TrendingUp,Plus,Eye,Edit,X,
   Minus,
 } from "lucide-react"
+import { Separator } from "@/components/ui/separator.jsx"; // Import Separator
 
 // Use teacher.courses from context
 const initialcourseFormState = {
@@ -43,7 +44,7 @@ const initialcourseFormState = {
       type: "video",
       urls: [""],
       files: {
-        documents: [], // multiple files per module
+        documents: [], // This will store { file: File, description: string }
         video: null,
         pdf: null,
         bibtex: null,
@@ -124,7 +125,7 @@ export default function TDashboard() {
           type: "video",
           urls: [""],
           files: {
-            documents : [],
+            documents : [], // Store { file, description }
             video: null,
             pdf: null,
             bibtex: null,
@@ -172,13 +173,13 @@ export default function TDashboard() {
       // existing uploaded resources can't be edited as File objects; keep them in resources view
       files: {
         // keep placeholders for new uploads
-        documents: [],
+        documents: [], // For new {file, description}
         video: null,
         pdf: null,
         bibtex: null,
         excel: null,
         additionalFiles: [],
-        // keep previous resources for display, but not as upload inputs
+        // keep previous resources for display
         existingResources: c.resources || [],
       },
     }));
@@ -242,6 +243,11 @@ export default function TDashboard() {
           duration: item.duration,
           type: item.type,
           urls: Array.isArray(item.urls) ? item.urls.filter(Boolean) : (item.urls ? [item.urls] : []),
+          // Send file descriptions to backend
+          fileDescriptions: (item.files.documents || []).map(doc => ({
+            fileName: doc.file.name,
+            description: doc.description
+          })),
         };
       });
 
@@ -257,16 +263,22 @@ export default function TDashboard() {
           const value = item.files[key];
           if (!value) return;
 
-          if (Array.isArray(value)) {
-            // multiple files (documents or additionalFiles)
+          if (key === 'documents' && Array.isArray(value)) {
+            // Handle documents array: { file, description }
+            value.forEach((doc) => {
+              if (doc.file instanceof File) {
+                formData.append(`content[${index}][files][${key}]`, doc.file);
+              }
+            });
+          } else if (Array.isArray(value)) {
+            // Handle other arrays (e.g., additionalFiles) - assuming they are File[]
             value.forEach((file) => {
               if (file instanceof File) {
-                // Append multiple files under same field name so backend can filter by fieldname
                 formData.append(`content[${index}][files][${key}]`, file);
               }
             });
           } else {
-            // single file (video, pdf, etc.)
+            // Handle single file (video, pdf, etc.)
             if (value instanceof File) {
               formData.append(`content[${index}][files][${key}]`, value);
             }
@@ -326,6 +338,11 @@ export default function TDashboard() {
           duration: item.duration,
           type: item.type,
           urls: Array.isArray(item.urls) ? item.urls.filter(Boolean) : (item.urls ? [item.urls] : []),
+          // Send descriptions for new files
+          fileDescriptions: (item.files.documents || []).map(doc => ({
+            fileName: doc.file.name,
+            description: doc.description
+          })),
         };
       });
 
@@ -339,16 +356,23 @@ export default function TDashboard() {
           const value = item.files[key];
           if (!value) return;
 
-          if (Array.isArray(value)) {
+          if (key === 'documents' && Array.isArray(value)) {
+            // Handle new documents array: { file, description }
+            value.forEach((doc) => {
+              if (doc.file instanceof File) {
+                formData.append(`content[${index}][files][${key}]`, doc.file);
+              }
+            });
+          } else if (key !== 'existingResources' && Array.isArray(value)) {
+            // Handle other new file arrays
             value.forEach((file) => {
               if (file instanceof File) {
                 formData.append(`content[${index}][files][${key}]`, file);
               }
             });
-          } else {
-            if (value instanceof File) {
-              formData.append(`content[${index}][files][${key}]`, value);
-            }
+          } else if (key !== 'existingResources' && value instanceof File) {
+            // Handle other new single files
+            formData.append(`content[${index}][files][${key}]`, value);
           }
         });
       });
@@ -752,27 +776,47 @@ export default function TDashboard() {
                                 multiple
                                 accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.bib,.bibtex,.mp4,.mov"
                                 onChange={(e) => {
-                                  const files = Array.from(e.target.files || []);
+                                  const newFiles = Array.from(e.target.files || []).map(file => ({ file: file, description: "" })); // Store as object
                                   updateLearningPathItem(index, "files", {
                                     ...item.files,
-                                    documents: [...(item.files.documents || []), ...files],
+                                    // Append new files to existing ones
+                                    documents: [...(item.files.documents || []), ...newFiles],
                                   });
                                 }}
                               />
 
-                              {/* Show selected files */}
-                              <div className="mt-2 space-y-1">
+                              {/* Show selected files with description input */}
+                              <div className="mt-2 space-y-2">
                                 {item.files.documents?.map((file, fileIndex) => (
                                   <div
-                                    key={fileIndex}
+                                    key={file.file.name + fileIndex}
                                     className="flex items-center justify-between border p-2 rounded text-sm"
                                   >
-                                    <span>{file.name}</span>
+                                    <div className="flex-1">
+                                      <span>{file.file.name}</span>
+                                      <Input
+                                        placeholder="File description..."
+                                        className="text-xs h-8 mt-1"
+                                        value={file.description}
+                                        onChange={(e) => {
+                                          const newDescription = e.target.value;
+                                          // Create a new array with the updated description
+                                          const updatedDocs = item.files.documents.map((doc, i) =>
+                                            i === fileIndex ? { ...doc, description: newDescription } : doc
+                                          );
+                                          // Update the state
+                                          updateLearningPathItem(index, "files", {
+                                            ...item.files,
+                                            documents: updatedDocs,
+                                          });
+                                        }}
+                                      />
+                                    </div>
                                     <Button
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => {
-                                        const updatedDocs = item.files.documents.filter((_, i) => i !== fileIndex);
+                                        const updatedDocs = item.files.documents.filter((_, i) => i !== fileIndex); // Filter by index
                                         updateLearningPathItem(index, "files", {
                                           ...item.files,
                                           documents: updatedDocs,
@@ -1044,104 +1088,22 @@ export default function TDashboard() {
                           <div className="space-y-3 border-t pt-3 bg-muted/20 rounded p-3">
                             <Label className="text-sm font-medium">Module Materials</Label>
 
-                            {/* <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label className="text-xs">Video File (.mp4, .mov, .avi)</Label>
-                                <Input
-                                  type="file"
-                                  accept=".mp4,.mov,.avi,.mkv,.webm"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0]
-                                    updateEditLearningPathItem(index, "files", {
-                                      ...item.files,
-                                      video: file,
-                                    })
-                                  }}
-                                  className="text-xs"
-                                />
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label className="text-xs">PDF Document</Label>
-                                <Input
-                                  type="file"
-                                  accept=".pdf"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0]
-                                    updateEditLearningPathItem(index, "files", {
-                                      ...item.files,
-                                      pdf: file,
-                                    })
-                                  }}
-                                  className="text-xs"
-                                />
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label className="text-xs">BibTeX References (.bib)</Label>
-                                <Input
-                                  type="file"
-                                  accept=".bib,.bibtex"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0]
-                                    updateEditLearningPathItem(index, "files", {
-                                      ...item.files,
-                                      bibtex: file,
-                                    })
-                                  }}
-                                  className="text-xs"
-                                />
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label className="text-xs">Excel Spreadsheet (.xlsx, .xls)</Label>
-                                <Input
-                                  type="file"
-                                  accept=".xlsx,.xls,.csv"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0]
-                                    updateEditLearningPathItem(index, "files", {
-                                      ...item.files,
-                                      excel: file,
-                                    })
-                                  }}
-                                  className="text-xs"
-                                />
-                              </div>
-                            </div> */}
-
-                            <div className="space-y-2">
-                              <Label className="text-xs">Add Resources</Label>
-                              <Input
-                                type="file"
-                                multiple
-                                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.bib,.bibtex,.mp4,.mov"
-                                onChange={(e) => {
-                                  const files = Array.from(e.target.files || []);
-                                  updateEditLearningPathItem(index, "files", {
-                                    ...item.files,
-                                    documents: [...(item.files.documents || []), ...files],
-                                  });
-                                }}
-                              />
-
-                              <p className="text-xs text-muted-foreground">
-                                Supported: Images, Documents, Presentations, Archives
-                              </p>
-                            </div>
-
-                            
-                            <ul className="space-y-1">
+                            {/* Show existing resources */}
+                            <Label className="text-xs font-medium">Existing Materials</Label>
+                            <ul className="space-y-2">
                               {item.files.existingResources?.map((res, ix) => (
-                                <li key={res._id || ix} className="flex justify-between items-center border p-2 rounded">
-                                  <a
-                                    href={res.fileUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="underline text-sm truncate"
-                                  >
-                                    {res.fileName || `Resource ${ix + 1}`}
-                                  </a>
+                                <li key={res._id || ix} className="flex justify-between items-center border p-2 rounded bg-white dark:bg-slate-800">
+                                  <div className="flex-1 min-w-0">
+                                    <a
+                                      href={res.fileUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="underline text-sm truncate font-medium"
+                                    >
+                                      {res.fileName || `Resource ${ix + 1}`}
+                                    </a>
+                                    <p className="text-xs text-muted-foreground truncate">{res.description || "No description"}</p>
+                                  </div>
                                   <Button
                                     variant="destructive"
                                     size="sm"
@@ -1151,27 +1113,70 @@ export default function TDashboard() {
                                   </Button>
                                 </li>
                               ))}
+                              {(!item.files.existingResources || item.files.existingResources.length === 0) && (
+                                <p className="text-xs text-muted-foreground">No existing materials.</p>
+                              )}
                             </ul>
+                            <Separator className="my-2" />
 
+                            <div className="space-y-2">
+                              <Label className="text-xs">Add New Resources</Label>
+                              <Input
+                                type="file"
+                                multiple
+                                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.bib,.bibtex,.mp4,.mov"
+                                onChange={(e) => {
+                                  const newFiles = Array.from(e.target.files || []).map(file => ({ file: file, description: "" }));
+                                  updateEditLearningPathItem(index, "files", {
+                                    ...item.files,
+                                    documents: [...(item.files.documents || []), ...newFiles],
+                                  });
+                                }}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Supported: Images, Documents, Presentations, Archives
+                              </p>
+                            </div>
 
-                            {(item.files?.video ||
-                              item.files?.pdf ||
-                              item.files?.bibtex ||
-                              item.files?.excel ||
-                              (item.files?.additionalFiles && item.files.additionalFiles.length > 0)) && (
-                              <div className="mt-2 p-2 bg-muted/50 rounded text-xs">
-                                <p className="font-medium mb-1">Newly Selected Files (will be uploaded)</p>
-                                <ul className="space-y-1">
-                                  {item.files?.video && <li>📹 Video: {item.files.video.name}</li>}
-                                  {item.files?.pdf && <li>📄 PDF: {item.files.pdf.name}</li>}
-                                  {item.files?.bibtex && <li>📚 BibTeX: {item.files.bibtex.name}</li>}
-                                  {item.files?.excel && <li>📊 Excel: {item.files.excel.name}</li>}
-                                  {item.files?.additionalFiles?.map((file, fileIndex) => (
-                                    <li key={fileIndex}>📎 {file.name}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
+                            {/* List of newly selected files */}
+                            <ul className="space-y-2">
+                              {item.files.documents?.map((doc, fileIndex) => (
+                                <li key={doc.file.name + fileIndex} className="border p-2 rounded bg-white dark:bg-slate-800">
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span>{doc.file.name}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        const updatedDocs = item.files.documents.filter((_, i) => i !== fileIndex);
+                                        updateEditLearningPathItem(index, "files", {
+                                          ...item.files,
+                                          documents: updatedDocs,
+                                        });
+                                      }}
+                                    >
+                                      Remove
+                                    </Button>
+                                  </div>
+                                  <Input
+                                    placeholder="File description..."
+                                    className="text-xs h-8 mt-1"
+                                    value={doc.description}
+                                    onChange={(e) => {
+                                      const newDescription = e.target.value;
+                                      const updatedDocs = item.files.documents.map((d, i) =>
+                                        i === fileIndex ? { ...d, description: newDescription } : d
+                                      );
+                                      updateEditLearningPathItem(index, "files", {
+                                        ...item.files,
+                                        documents: updatedDocs,
+                                      });
+                                    }}
+                                  />
+                                </li>
+                              ))}
+                            </ul>
+                            
                           </div>
                         </div>
                       </Card>
@@ -1346,7 +1351,7 @@ export default function TDashboard() {
                             </div>
                             <div className="min-w-0">
                               <div className="text-sm font-medium truncate">{res.fileName}</div>
-                              <div className="text-xs text-muted-foreground truncate">{res.fileUrl}</div>
+                              <div className="text-xs text-muted-foreground truncate">{res.description || res.fileType}</div>
                             </div>
                             <div className="text-xs text-muted-foreground">{res.fileType}</div>
                           </a>

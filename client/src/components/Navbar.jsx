@@ -77,7 +77,7 @@ export default function Header() {
           >
             {navItems.map((item, idx) => (
               <a
-                key={`mobile-link-Rs{idx}`}
+                key={`mobile-link-${idx}`}
                 href={item.link}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="relative text-neutral-600 dark:text-neutral-300"

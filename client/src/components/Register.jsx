@@ -59,7 +59,7 @@ export default function Register() {
       
 
 
-    const { data } = await axios.post(`/api/Rs{userType}/register`, form, {
+    const { data } = await axios.post(`/api/${userType}/register`, form, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
