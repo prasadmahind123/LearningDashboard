@@ -37,7 +37,7 @@ function SidebarContent() {
           to={link.path}
           end={link.path === "/teacher"}
           className={({ isActive }) =>
-            `flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 ${isActive ? 'bg-gray-200 font-semibold' : ''}`
+            `flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 Rs{isActive ? 'bg-gray-200 font-semibold' : ''}`
           }
         >
           <span className="flex-1">{link.name}</span>
@@ -104,7 +104,7 @@ function SidebarContent() {
                   to={link.path}
                   end={link.path === "/teacher"}
                   className={({ isActive }) =>
-                    `flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 ${isActive ? 'bg-gray-200 font-semibold' : ''}`
+                    `flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 Rs{isActive ? 'bg-gray-200 font-semibold' : ''}`
                   }
                 >
                   <span className="flex-1">{link.name}</span>

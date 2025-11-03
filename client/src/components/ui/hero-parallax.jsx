@@ -87,7 +87,7 @@ export const ProductCard = ({
       }}
       key={product.title}
       className="group/product h-96 w-[30rem] relative shrink-0">
-      <Link to={`/courses/learning-path/${product._id}`} className="block group-hover/product:shadow-2xl ">
+      <Link to={`/courses/learning-path/Rs{product._id}`} className="block group-hover/product:shadow-2xl ">
         <img
           src={product.image}
           height="600"

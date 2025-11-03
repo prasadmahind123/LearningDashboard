@@ -8,7 +8,7 @@ export default function Progress() {
 
     useEffect(() => {
     const fetchStats = async () => {
-      const res = await axios.get(`/api/learner/stats/${learner}`);
+      const res = await axios.get(`/api/learner/stats/${learner.id}`);
       const data = res.data;
 
       // Prepare chart data

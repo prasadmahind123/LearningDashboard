@@ -151,20 +151,20 @@ export default function LearningPathForm({ mode = "create", courseData, onClose 
         // Handle file uploads for each content item
         if (item.files) {
           if (item.files.video) {
-            formData.append(`content[${index}][files][video]`, item.files.video);
+            formData.append(`content[Rs{index}][files][video]`, item.files.video);
           }
           if (item.files.pdf) {
-            formData.append(`content[${index}][files][pdf]`, item.files.pdf);
+            formData.append(`content[Rs{index}][files][pdf]`, item.files.pdf);
           }
           if (item.files.bibtex) {
-            formData.append(`content[${index}][files][bibtex]`, item.files.bibtex);
+            formData.append(`content[Rs{index}][files][bibtex]`, item.files.bibtex);
           }
           if (item.files.excel) {
-            formData.append(`content[${index}][files][excel]`, item.files.excel);
+            formData.append(`content[Rs{index}][files][excel]`, item.files.excel);
           }
           if (item.files.additionalFiles && item.files.additionalFiles.length > 0) {
             item.files.additionalFiles.forEach((file) => {
-              formData.append(`content[${index}][files][additionalFiles]`, file);
+              formData.append(`content[Rs{index}][files][additionalFiles]`, file);
             });
           }
         }

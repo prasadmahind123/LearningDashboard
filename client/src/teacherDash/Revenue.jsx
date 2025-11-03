@@ -133,7 +133,7 @@ export default function Revenue() {
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">${teacher?.revenue || 0}</div>
+                      <div className="text-2xl font-bold">Rs{teacher?.revenue || 0}</div>
                       <p className="text-xs text-muted-foreground">All time earnings</p>
                     </CardContent>
                   </Card>
@@ -144,7 +144,7 @@ export default function Revenue() {
                       <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">${revenueData.monthlyRevenue.toLocaleString()}</div>
+                      <div className="text-2xl font-bold">Rs{revenueData.monthlyRevenue.toLocaleString()}</div>
                       <p className="text-xs text-muted-foreground">+{revenueData.yearlyGrowth}% from last month</p>
                     </CardContent>
                   </Card>
@@ -166,7 +166,7 @@ export default function Revenue() {
                       <BookOpen className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">${revenueData.avgRevenuePercourse.toLocaleString()}</div>
+                      <div className="text-2xl font-bold">Rs{revenueData.avgRevenuePercourse.toLocaleString()}</div>
                       <p className="text-xs text-muted-foreground">Average revenue</p>
                     </CardContent>
                   </Card>
@@ -191,11 +191,11 @@ export default function Revenue() {
                                     <div
                                       className="bg-primary h-2 rounded-full"
                                       style={{
-                                        width: `${(month.revenue / Math.max(...revenueData.monthlyBreakdown.map((m) => m.revenue))) * 100}%`,
+                                        width: `Rs{(month.revenue / Math.max(...revenueData.monthlyBreakdown.map((m) => m.revenue))) * 100}%`,
                                       }}
                                     />
                                   </div>
-                                  <span className="text-sm font-medium">${month.revenue.toLocaleString()}</span>
+                                  <span className="text-sm font-medium">Rs{month.revenue.toLocaleString()}</span>
                                 </div>
                               </div>
                             </div>
@@ -229,8 +229,8 @@ export default function Revenue() {
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="font-semibold text-green-600">${course.revenue.toLocaleString()}</p>
-                                <p className="text-sm text-muted-foreground">${course.price}</p>
+                                <p className="font-semibold text-green-600">Rs{course.revenue.toLocaleString()}</p>
+                                <p className="text-sm text-muted-foreground">Rs{course.price}</p>
                               </div>
                             </div>
                           ))}
@@ -274,10 +274,10 @@ export default function Revenue() {
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell>${course.price}</TableCell>
+                            <TableCell>Rs{course.price}</TableCell>
                             <TableCell>{course.students.toLocaleString()}</TableCell>
                             <TableCell className="font-semibold text-green-600">
-                              ${course.revenue.toLocaleString()}
+                              Rs{course.revenue.toLocaleString()}
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center space-x-2">

@@ -18,15 +18,27 @@ export default function TStudents() {
     const [selectedStudent, setSelectedStudent] = useState(null)
     const [enrolledLearners , setEnrolledLearner] = useState(teacher.enrolledStudents || []);
 
-    useEffect(()=>{
-      if(!teacher.enrolledStudents.length) return;
-      const enrolledLearner = learners.filter((p) =>
-        teacher.enrolledStudents.includes(p._id)
-      );
-      setEnrolledLearner(enrolledLearner)
-    },[teacher,learners])
 
-    
+      useEffect(() => {
+        if (!teacher || !paths?.length || !learners?.length) return;
+
+        // ✅ Get all path IDs created by the current teacher
+        const teacherPathIds = teacher.createdPaths || [];
+
+        // ✅ Find learners who are enrolled in those teacher-created paths only
+        const filteredLearners = learners.filter((learner) =>
+          learner.enrolledPaths?.some((enrolled) =>
+            teacherPathIds.includes(
+              typeof enrolled === "object" ? enrolled.pathId : enrolled
+            )
+          )
+        );
+
+        // ✅ Update the state
+        setEnrolledLearner(filteredLearners);
+      }, [teacher, learners, paths]);
+
+
     
     
 
@@ -54,8 +66,8 @@ export default function TStudents() {
 
     return matchesSearch
   })
-
-    
+ 
+  
   return (
     <div className="no-scrollbar flex-1 h-[95vh] overflow-y-scroll 
         flex flex-col justify-between">
@@ -104,10 +116,13 @@ export default function TStudents() {
                       <TableBody>
                         {filteredStudents.map((student) => (
                           <TableRow key={student._id}>
+                            {
+                              
+                            }
                             <TableCell>
                               <div className="flex items-center space-x-3">
                                 <Avatar>
-                                  <AvatarFallback>{ student.fullName.charAt(0).toUpperCase() || "L"}</AvatarFallback>
+                                  <AvatarFallback>{ student.fullName?.charAt(0).toUpperCase() || "L"}</AvatarFallback>
                                   
                                 </Avatar>
                                 <div>
@@ -118,7 +133,7 @@ export default function TStudents() {
                             </TableCell>
                             <TableCell>
                               <div className="text-sm">
-                                <p className="font-medium">{student.enrolledPaths.length} enrolled</p>
+                                <p className="font-medium">{student.enrolledPaths?.length} enrolled</p>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -176,15 +191,29 @@ export default function TStudents() {
                                           <Card>
                                               <CardContent>
                                                   <div className="space-y-4 w-full">
-                                                      {selectedStudent.enrolledPaths.map((pathId, index) => {
-                                                          const course = paths.find(p => p._id === pathId);
-                                                          if (!course) return null;
+                                                     {selectedStudent.enrolledPaths
+                                                        .map((pathObj, index) => {
+                                                          // Handle both object { pathId } or direct string ID cases
+                                                          const pathId = typeof pathObj === "object" ? pathObj.pathId : pathObj;
+
+                                                          const course = paths.find(
+                                                            (p) =>
+                                                              p._id === pathId &&
+                                                              teacher?.createdPaths?.includes(p._id) // ✅ show only teacher's created paths
+                                                          );
+
+                                                          if (!course) return null; // skip if not this teacher’s course
+
                                                           return (
-                                                              <div key={index} >
-                                                                  <h4 className="font-semibold">{index + 1} . {course.title}</h4>
-                                                              </div>
-                                                          )
-                                                      })}
+                                                            <div key={index}>
+                                                              <h4 className="font-semibold">
+                                                                {index + 1}. {course.title}
+                                                              </h4>
+                                                            </div>
+                                                          );
+                                                        })
+                                                      }
+
                                                       <p className="text-xs text-muted-foreground">Paths Enrolled</p>
                                                   </div>
                                               </CardContent>

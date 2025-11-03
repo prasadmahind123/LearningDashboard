@@ -162,7 +162,7 @@ export default function CoursesTab({ searchQuery }) {
                         <span className="text-muted-foreground">No rating</span>
                       )}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell">${course.price}</TableCell>
+                    <TableCell className="hidden lg:table-cell">Rs{course.price}</TableCell>
                     <TableCell>
                       <Badge
                         variant={
@@ -176,7 +176,7 @@ export default function CoursesTab({ searchQuery }) {
                         {course.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">${course.revenue}</TableCell>
+                    <TableCell className="hidden md:table-cell">Rs{course.revenue}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {course.status === "Under Review" ? (
@@ -223,7 +223,7 @@ export default function CoursesTab({ searchQuery }) {
                                       </div>
                                       <div>
                                         <Label>Price</Label>
-                                        <p className="font-medium">${selectedcourse.price}</p>
+                                        <p className="font-medium">Rs{selectedcourse.price}</p>
                                       </div>
                                       <div>
                                         <Label>Total Students</Label>
@@ -235,12 +235,12 @@ export default function CoursesTab({ searchQuery }) {
                                       </div>
                                       <div>
                                         <Label>Total Revenue</Label>
-                                        <p className="font-medium">${selectedcourse.revenue}</p>
+                                        <p className="font-medium">Rs{selectedcourse.revenue}</p>
                                       </div>
                                       <div>
                                         <Label>Rating</Label>
                                         <p className="font-medium">
-                                          {selectedcourse.rating > 0 ? `${selectedcourse.rating}/5` : "No rating"}
+                                          {selectedcourse.rating > 0 ? `Rs{selectedcourse.rating}/5` : "No rating"}
                                         </p>
                                       </div>
                                     </div>

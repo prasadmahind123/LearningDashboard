@@ -93,7 +93,7 @@ export const NavItems = ({
       )}>
       {items.map((item, idx) => (
         <NavLink
-          key={`link-${idx}`}
+          key={`link-Rs{idx}`}
           to={item.link}
           onMouseEnter={() => setHovered(idx)}
           onClick={onItemClick}

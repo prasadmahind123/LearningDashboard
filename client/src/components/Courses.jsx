@@ -77,10 +77,10 @@ export default function Courses() {
                 <div className="pt-2">
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold">${course.price}</span>
+                      <span className="text-2xl font-bold">Rs{course.price}</span>
                     </div>
                     <Button variant={"outline"} >
-                      <Link to={`/courses/learning-path/${course._id}`}>View path</Link>
+                      <Link to={`/courses/learning-path/Rs{course._id}`}>View path</Link>
                     </Button>
                   </div>
                 </div>

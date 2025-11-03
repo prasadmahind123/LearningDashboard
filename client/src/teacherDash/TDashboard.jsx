@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import toast,{Toaster} from 'react-hot-toast';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   Dialog,
@@ -30,13 +31,19 @@ const initialcourseFormState = {
   level: "",
   price: "",
   duration: "",
+  code: "",
+  isPrivate: false,
+  image: null,
+  // Each module supports multiple urls and multiple files.documents
   learningPath: [
     {
       title: "",
       description: "",
       duration: "",
       type: "video",
+      urls: [""],
       files: {
+        documents: [], // multiple files per module
         video: null,
         pdf: null,
         bibtex: null,
@@ -48,7 +55,6 @@ const initialcourseFormState = {
 }
 export default function TDashboard() {
   const { teacher ,paths , axios , navigate } = useAppContext();
-  // const learningPaths = teacher.createdPaths;
   const [isCreatecourseOpen, setIsCreatecourseOpen] = useState(false)
   const [courseForm, setcourseForm] = useState(initialcourseFormState)
   const [isEditcourseOpen, setIsEditcourseOpen] = useState(false)
@@ -60,15 +66,9 @@ export default function TDashboard() {
   const [viewingcourse, setViewingcourse] = useState(null);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-
   const [moduleTitleToDelete, setModuleTitleToDelete] = useState("");
 
-
-
-
-
-  // const learningPaths = teacher?.createdPaths || [];
+  // Sync teacher paths
   useEffect(() => {
     if (!teacher?.createdPaths?.length || !paths?.length) return;
 
@@ -80,39 +80,37 @@ export default function TDashboard() {
     setLearningPaths(teacherPaths);
   }, [teacher, paths]);
 
-// Handler
-const handleViewcourse = (course) => {
-  const foundCourse = paths.find((p) => p._id === course);
+  // View course
+  const handleViewcourse = (course) => {
+    const foundCourse = paths.find((p) => p._id === course);
 
-  if (!foundCourse) {
-    alert("Course details not found.");
-    return;
-  }
-  setViewingcourse(foundCourse);
-  console.log("Viewing course:", foundCourse);
-  setIsViewcourseOpen(true);
-};
+    if (!foundCourse) {
+      alert("Course details not found.");
+      return;
+    }
+    setViewingcourse(foundCourse);
+    setIsViewcourseOpen(true);
+  };
 
-const copyLink = async () => {
-  try {
-    const url = `${window.location.origin}/courses/learning-path/${viewingcourse?._id}`;
-    await navigator.clipboard.writeText(url);
-    // show toast or small feedback in your app
-    alert("Link copied to clipboard");
-  } catch (err) {
-    console.error("Failed to copy link", err);
-  }
-};
+  const copyLink = async () => {
+    try {
+      const url = `${window.location.origin}/courses/learning-path/${viewingcourse?._id}`;
+      await navigator.clipboard.writeText(url);
+      alert("Link copied to clipboard");
+    } catch (err) {
+      console.error("Failed to copy link", err);
+    }
+  };
 
   const sections = viewingcourse?.content || viewingcourse?.learningPath || [];
   const createdBy = viewingcourse?.createdBy || viewingcourse?.createdBy || { fullName: "", email: "" };
 
   const navigateToEdit = (course) => {
     setIsViewcourseOpen(false);
-    // adjust the route to your edit page - example:
     navigate(`/teacher/courses/edit/${course._id}`);
   };
 
+  // Add new module to create form
   const addLearningPathItem = () => {
     setcourseForm((prev) => ({
       ...prev,
@@ -124,7 +122,9 @@ const copyLink = async () => {
           image : "",
           duration: "",
           type: "video",
+          urls: [""],
           files: {
+            documents : [],
             video: null,
             pdf: null,
             bibtex: null,
@@ -136,6 +136,7 @@ const copyLink = async () => {
     }))
   }
 
+  // Generic update for create form module item
   const updateLearningPathItem = (index, field, value) => {
     setcourseForm((prev) => ({
       ...prev,
@@ -150,6 +151,7 @@ const copyLink = async () => {
     }))
   }
 
+  // Prepare edit form from existing path
   const handleEditcourse = (course) => {
     const editPath = paths.find((p) => p._id === course);
     if (!editPath) {
@@ -157,6 +159,30 @@ const copyLink = async () => {
       return;
     }
     setEditingcourse(editPath)
+
+    // Use content (your DB uses content) — normalize into learningPath for form
+    const normalizedLearningPath = (editPath.content || []).map((c) => ({
+      _id: c._id,
+      title: c.title || "",
+      description: c.description || "",
+      duration: c.duration || "",
+      type: c.type || "video",
+      // ensure urls is an array
+      urls: Array.isArray(c.urls) ? c.urls : (c.urls ? [c.urls] : [""]),
+      // existing uploaded resources can't be edited as File objects; keep them in resources view
+      files: {
+        // keep placeholders for new uploads
+        documents: [],
+        video: null,
+        pdf: null,
+        bibtex: null,
+        excel: null,
+        additionalFiles: [],
+        // keep previous resources for display, but not as upload inputs
+        existingResources: c.resources || [],
+      },
+    }));
+
     setEditcourseForm({
       title: editPath.title,
       description: editPath.description || "",
@@ -164,18 +190,22 @@ const copyLink = async () => {
       level: editPath.level,
       price: editPath.price,
       duration: editPath.duration,
-      learningPath: editPath.learningPath || [
+      code: editPath.code || "",
+      learningPath: normalizedLearningPath.length ? normalizedLearningPath : [
         {
           title: "",
           description: "",
           duration: "",
           type: "video",
+          urls: [""],
           files: {
+            documents: [],
             video: null,
             pdf: null,
             bibtex: null,
             excel: null,
             additionalFiles: [],
+            existingResources: [],
           },
         },
       ],
@@ -183,60 +213,66 @@ const copyLink = async () => {
     setIsEditcourseOpen(true)
   }
 
+  // CREATE handler — build FormData with content JSON + all files
   const handleCreateLearningPath = async () => {
     try {
       const formData = new FormData();
-      
+
       // Add basic fields
-      formData.append('title', courseForm.title);
-      formData.append('description', courseForm.description);
-      formData.append('category', courseForm.category);
-      formData.append('level', courseForm.level);
-      formData.append('price', courseForm.price);
-      formData.append('duration', courseForm.duration);
-      formData.append('isPrivate', courseForm.isPrivate);
-      formData.append('code', courseForm.code);
-      
-      // Handle image file
+      formData.append('title', courseForm.title || "");
+      formData.append('description', courseForm.description || "");
+      formData.append('category', courseForm.category || "");
+      formData.append('level', courseForm.level || "");
+      formData.append('price', courseForm.price || 0);
+      formData.append('duration', courseForm.duration || "");
+      formData.append('isPrivate', courseForm.isPrivate ? "true" : "false");
+      formData.append('code', courseForm.code || "");
+
+      // Handle image file (pathImage)
       const imageInput = document.getElementById('image');
       if (imageInput && imageInput.files && imageInput.files[0]) {
         formData.append('pathImage', imageInput.files[0]);
       }
-      
-      // Process content and files
-      const processedContent = courseForm.learningPath.map((item, index) => {
-        const contentItem = {
+
+      // Build metadata-only content array (urls and other metadata)
+      const processedContent = courseForm.learningPath.map((item) => {
+        return {
           title: item.title,
           description: item.description,
-          duration: item.duration
+          duration: item.duration,
+          type: item.type,
+          urls: Array.isArray(item.urls) ? item.urls.filter(Boolean) : (item.urls ? [item.urls] : []),
         };
-        
-        // Handle file uploads for each content item
-        if (item.files) {
-          if (item.files.video) {
-            formData.append(`content[${index}][files][video]`, item.files.video);
-          }
-          if (item.files.pdf) {
-            formData.append(`content[${index}][files][pdf]`, item.files.pdf);
-          }
-          if (item.files.bibtex) {
-            formData.append(`content[${index}][files][bibtex]`, item.files.bibtex);
-          }
-          if (item.files.excel) {
-            formData.append(`content[${index}][files][excel]`, item.files.excel);
-          }
-          if (item.files.additionalFiles && item.files.additionalFiles.length > 0) {
-            item.files.additionalFiles.forEach((file) => {
-              formData.append(`content[${index}][files][additionalFiles]`, file);
-            });
-          }
-        }
-        
-        return contentItem;
       });
-      
-      // Add processed content as JSON
+
+      // Append content JSON
       formData.append('content', JSON.stringify(processedContent));
+
+      // Append files for each module
+      courseForm.learningPath.forEach((item, index) => {
+        if (!item.files) return;
+
+        // iterate through known keys in files object
+        Object.keys(item.files).forEach((key) => {
+          const value = item.files[key];
+          if (!value) return;
+
+          if (Array.isArray(value)) {
+            // multiple files (documents or additionalFiles)
+            value.forEach((file) => {
+              if (file instanceof File) {
+                // Append multiple files under same field name so backend can filter by fieldname
+                formData.append(`content[${index}][files][${key}]`, file);
+              }
+            });
+          } else {
+            // single file (video, pdf, etc.)
+            if (value instanceof File) {
+              formData.append(`content[${index}][files][${key}]`, value);
+            }
+          }
+        });
+      });
 
       const response = await axios.post('/api/learningpaths/addpath', formData, {
         headers: {
@@ -246,10 +282,9 @@ const copyLink = async () => {
       });
 
       if (response.data.success) {
-        console.log('Learning path created successfully:', response.data.learningPath);
         setIsCreatecourseOpen(false);
         setcourseForm(initialcourseFormState);
-        // Refresh the learning paths
+        // refresh list simply — you can replace with better state update later
         window.location.reload();
       } else {
         console.error('Error creating learning path:', response.data.message);
@@ -257,89 +292,130 @@ const copyLink = async () => {
       }
     } catch (error) {
       console.error('Error creating learning path:', error);
-      alert('Error creating learning path: ' + error.message);
+      alert('Error creating learning path: ' + (error.message || error));
     }
   };
 
-// Update path in database
-const handleUpdatecourse = async () => {
-  try {
-    const { _id } = editingcourse;
-    const formData = new FormData();
+  // UPDATE handler — build FormData with content JSON + all newly attached files
+  const handleUpdatecourse = async () => {
+    try {
+      if (!editingcourse) {
+        alert("No course selected to update.");
+        return;
+      }
+      const { _id } = editingcourse;
+      const formData = new FormData();
 
-    // Basic fields
-    formData.append("title", editcourseForm.title);
-    formData.append("description", editcourseForm.description);
-    formData.append("category", editcourseForm.category);
-    formData.append("level", editcourseForm.level);
-    formData.append("price", editcourseForm.price);
-    formData.append("duration", editcourseForm.duration);
-    if (editcourseForm.code && editcourseForm.code.trim() !== editingcourse.code) {
-      formData.append("code", editcourseForm.code.trim());
+      // Basic fields
+      formData.append("title", editcourseForm.title || "");
+      formData.append("description", editcourseForm.description || "");
+      formData.append("category", editcourseForm.category || "");
+      formData.append("level", editcourseForm.level || "");
+      formData.append("price", editcourseForm.price || 0);
+      formData.append("duration", editcourseForm.duration || "");
+      if (editcourseForm.code && editcourseForm.code.trim() !== editingcourse.code) {
+        formData.append("code", editcourseForm.code.trim());
+      }
+
+      // Process modules metadata
+      const processedContent = editcourseForm.learningPath.map((item) => {
+        return {
+          _id: item._id, // keep existing id if present (backend will match)
+          title: item.title,
+          description: item.description,
+          duration: item.duration,
+          type: item.type,
+          urls: Array.isArray(item.urls) ? item.urls.filter(Boolean) : (item.urls ? [item.urls] : []),
+        };
+      });
+
+      // Append content JSON
+      formData.append("content", JSON.stringify(processedContent));
+
+      // Append any newly selected files for each module
+      editcourseForm.learningPath.forEach((item, index) => {
+        if (!item.files) return;
+        Object.keys(item.files).forEach((key) => {
+          const value = item.files[key];
+          if (!value) return;
+
+          if (Array.isArray(value)) {
+            value.forEach((file) => {
+              if (file instanceof File) {
+                formData.append(`content[${index}][files][${key}]`, file);
+              }
+            });
+          } else {
+            if (value instanceof File) {
+              formData.append(`content[${index}][files][${key}]`, value);
+            }
+          }
+        });
+      });
+
+      // Make PUT request as multipart/form-data
+      const { data } = await axios.put(
+        `/api/learningpaths/update/${_id}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true
+        }
+      );
+
+      if (data.success || data.updatedPath || data.message?.includes("updated")) {
+      toast.success("Learning path updated successfully!");
+      setIsEditcourseOpen(false);
+      window.location.reload();
+    } else {
+      toast.error("Failed to update path");
     }
 
-    // Process modules
-    const processedContent = editcourseForm.learningPath.map((item, index) => {
-      const moduleData = {
-        _id: item._id, // keep existing id if present
-        title: item.title,
-        description: item.description,
-        duration: item.duration,
-        type: item.type
-      };
+    } catch (error) {
+      console.error("Error updating path:", error);
+      toast.error("Error updating path: " + (error.message || error));
+    }
+  };
 
-      // Attach files to FormData
-      if (item.files) {
-        if (item.files.video) {
-          formData.append(`content[${index}][files][video]`, item.files.video);
-        }
-        if (item.files.pdf) {
-          formData.append(`content[${index}][files][pdf]`, item.files.pdf);
-        }
-        if (item.files.bibtex) {
-          formData.append(`content[${index}][files][bibtex]`, item.files.bibtex);
-        }
-        if (item.files.excel) {
-          formData.append(`content[${index}][files][excel]`, item.files.excel);
-        }
-        if (item.files.additionalFiles?.length) {
-          item.files.additionalFiles.forEach((file) => {
-            formData.append(`content[${index}][files][additionalFiles]`, file);
-          });
-        }
-      }
-
-      return moduleData;
-    });
-
-    // Add the content JSON (metadata only)
-    formData.append("content", JSON.stringify(processedContent));
-
-    // Make PUT request as multipart/form-data
-    const { data } = await axios.put(
-      `/api/learningpaths/update/${_id}`,
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true
-      }
+  const handleDeleteResource = async (pathId, moduleId, resourceId) => {
+  if (!window.confirm("Are you sure you want to delete this document?")) return;
+  try {
+    const { data } = await axios.delete(
+      `/api/learningpaths/${pathId}/modules/${moduleId}/resources/${resourceId}`,
+      { withCredentials: true }
     );
 
     if (data.success) {
-      alert("Learning path updated!");
-      setIsEditcourseOpen(false);
-      window.location.reload(); // Refresh list
+      toast.success("Document deleted successfully!");
+      // Refresh locally
+      setEditcourseForm((prev) => ({
+        ...prev,
+        learningPath: prev.learningPath.map((mod) =>
+          mod._id === moduleId
+            ? {
+                ...mod,
+                files: {
+                  ...mod.files,
+                  existingResources: mod.files.existingResources.filter(
+                    (r) => r._id !== resourceId
+                  ),
+                },
+              }
+            : mod
+        ),
+      }));
     } else {
-      alert("Failed to update path");
+      toast.error("Error deleting file: " + data.message);
     }
   } catch (error) {
-    console.error("Error updating path:", error);
-    alert("Error updating path: " + error.message);
+    console.error("Error deleting document:", error);
+    toast.error("Failed to delete document.");
   }
 };
 
 
-const handleDeleteModule = async () => {
+
+  const handleDeleteModule = async () => {
     if (!editingcourse || !moduleTitleToDelete) {
       alert("Please select a course and enter a module title to delete.");
       return;
@@ -351,48 +427,48 @@ const handleDeleteModule = async () => {
       });
 
       if (data.success) {
-        alert("Module deleted successfully!");
-        // Update the form state to reflect the deletion
+        toast.success("Module deleted successfully!");
         setEditcourseForm(prev => ({
             ...prev,
             learningPath: prev.learningPath.filter(m => m.title !== moduleTitleToDelete)
         }));
         setIsDeleteDialogOpen(false);
         setModuleTitleToDelete("");
-        window.location.reload(); // Or update state more granularly
+        window.location.reload();
       } else {
-        alert(`Error: ${data.message}`);
+        toast.error(`Error: ${data.message}`);
       }
     } catch (error) {
       console.error("Error deleting module:", error);
-      alert(error.response?.data?.message || "An error occurred while deleting the module.");
+      toast.success(error.response?.data?.message || "An error occurred while deleting the module.");
     }
   };
 
-
-
-
-const addEditLearningPathItem = () => {
-  setEditcourseForm((prev) => ({
-    ...prev,
-    learningPath: [
-      ...prev.learningPath,
-      {
-        title: "",
-        description: "",
-        duration: "",
-        type: "video",
-        files: {
-          video: null,
-          pdf: null,
-          bibtex: null,
-          excel: null,
-          additionalFiles: [],
+  // Edit form helpers
+  const addEditLearningPathItem = () => {
+    setEditcourseForm((prev) => ({
+      ...prev,
+      learningPath: [
+        ...prev.learningPath,
+        {
+          title: "",
+          description: "",
+          duration: "",
+          type: "video",
+          urls: [""],
+          files: {
+            documents: [],
+            video: null,
+            pdf: null,
+            bibtex: null,
+            excel: null,
+            additionalFiles: [],
+            existingResources: [],
+          },
         },
-      },
-    ],
-  }));
-};
+      ],
+    }));
+  };
 
   const updateEditLearningPathItem = (index, field, value) => {
     setEditcourseForm((prev) => ({
@@ -400,13 +476,14 @@ const addEditLearningPathItem = () => {
       learningPath: prev.learningPath.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     }))
   }
-// Remove a module
-const removeEditLearningPathItem = (index) => {
-  setEditcourseForm((prev) => ({
-    ...prev,
-    learningPath: prev.learningPath.filter((_, i) => i !== index),
-  }));
-};
+
+  const removeEditLearningPathItem = (index) => {
+    setEditcourseForm((prev) => ({
+      ...prev,
+      learningPath: prev.learningPath.filter((_, i) => i !== index),
+    }));
+  };
+
   return (
     <div>
         <div className="flex justify-between items-center mb-8">
@@ -472,15 +549,15 @@ const removeEditLearningPathItem = (index) => {
                     <Input
                     type="file"
                     id="image"
-                    value={courseForm.image}
+                    // file input keeps DOM value; we don't set controlled value
                     onChange={(e) => setcourseForm((prev) => ({ ...prev, image: e.target.value }))}
                     />
                   </div>
                      <div className="space-y-2">
                       <Label htmlFor="isPrivate">isPrivate</Label>
                       <Select
-                        value={courseForm.isPrivate}
-                        onValueChange={(value) => setcourseForm((prev) => ({ ...prev, isPrivate: value }))}
+                        value={courseForm.isPrivate ? "true" : "false"}
+                        onValueChange={(value) => setcourseForm((prev) => ({ ...prev, isPrivate: value === "true" })) }
                       >
                         <SelectTrigger  className="w-full cursor-pointer">
                           <SelectValue placeholder="Select privacy" />
@@ -556,7 +633,7 @@ const removeEditLearningPathItem = (index) => {
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-lg font-semibold">course</Label>
+                    <Label className="text-lg font-semibold">path</Label>
                     <Button type="button" variant="outline" size="sm" onClick={addLearningPathItem}>
                       <Plus className="mr-2 h-4 w-4" />
                       Add Section
@@ -628,116 +705,87 @@ const removeEditLearningPathItem = (index) => {
                                 placeholder="2h 30m"
                               />
                             </div>
-                          </div>
 
-                          <div className="space-y-3 border-t pt-3">
-                            <Label className="text-sm font-medium">learning path Materials</Label>
+                           <div className="space-y-2">
+                              <Label>External Resource URLs</Label>
 
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label className="text-xs">Video File (.mp4, .mov, .avi)</Label>
-                                <Input
-                                  type="file"
-                                  accept=".mp4,.mov,.avi,.mkv,.webm"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0]
-                                    updateLearningPathItem(index, "files", {
-                                      ...item.files,
-                                      video: file,
-                                    })
-                                  }}
-                                  className="text-xs"
-                                />
-                              </div>
+                              {item.urls.map((url, urlIndex) => (
+                                <div key={urlIndex} className="flex gap-2 mb-2">
+                                  <Input
+                                    type="url"
+                                    value={url}
+                                    onChange={(e) => {
+                                      const newUrls = [...item.urls];
+                                      newUrls[urlIndex] = e.target.value;
+                                      updateLearningPathItem(index, "urls", newUrls);
+                                    }}
+                                    placeholder="https://youtube.com/... or https://docs.google.com/..."
+                                  />
+                                  <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    onClick={() => {
+                                      const newUrls = item.urls.filter((_, i) => i !== urlIndex);
+                                      updateLearningPathItem(index, "urls", newUrls);
+                                    }}
+                                  >
+                                    ✕
+                                  </Button>
+                                </div>
+                              ))}
 
-                              <div className="space-y-2">
-                                <Label className="text-xs">PDF Document</Label>
-                                <Input
-                                  type="file"
-                                  accept=".pdf"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0]
-                                    updateLearningPathItem(index, "files", {
-                                      ...item.files,
-                                      pdf: file,
-                                    })
-                                  }}
-                                  className="text-xs"
-                                />
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label className="text-xs">BibTeX References (.bib)</Label>
-                                <Input
-                                  type="file"
-                                  accept=".bib,.bibtex"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0]
-                                    updateLearningPathItem(index, "files", {
-                                      ...item.files,
-                                      bibtex: file,
-                                    })
-                                  }}
-                                  className="text-xs"
-                                />
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label className="text-xs">Excel Spreadsheet (.xlsx, .xls)</Label>
-                                <Input
-                                  type="file"
-                                  accept=".xlsx,.xls,.csv"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0]
-                                    updateLearningPathItem(index, "files", {
-                                      ...item.files,
-                                      excel: file,
-                                    })
-                                  }}
-                                  className="text-xs"
-                                />
-                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateLearningPathItem(index, "urls", [...item.urls, ""])}
+                              >
+                                + Add Another URL
+                              </Button>
                             </div>
 
-                            <div className="space-y-2">
-                              <Label className="text-xs">Additional Resources (Images, Documents, etc.)</Label>
+                          </div>
+
+                          <div className="space-y-2 mt-4">
+                              <Label>Upload Documents / Files (PDF, Word, Excel, PPT, BibTex, etc.)</Label>
                               <Input
                                 type="file"
                                 multiple
-                                accept=".jpg,.jpeg,.png,.gif,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar"
+                                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.bib,.bibtex,.mp4,.mov"
                                 onChange={(e) => {
-                                  const files = Array.from(e.target.files || [])
+                                  const files = Array.from(e.target.files || []);
                                   updateLearningPathItem(index, "files", {
                                     ...item.files,
-                                    additionalFiles: files,
-                                  })
+                                    documents: [...(item.files.documents || []), ...files],
+                                  });
                                 }}
-                                className="text-xs"
                               />
-                              <p className="text-xs text-muted-foreground">
-                                Supported: Images, Documents, Presentations, Archives
-                              </p>
+
+                              {/* Show selected files */}
+                              <div className="mt-2 space-y-1">
+                                {item.files.documents?.map((file, fileIndex) => (
+                                  <div
+                                    key={fileIndex}
+                                    className="flex items-center justify-between border p-2 rounded text-sm"
+                                  >
+                                    <span>{file.name}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        const updatedDocs = item.files.documents.filter((_, i) => i !== fileIndex);
+                                        updateLearningPathItem(index, "files", {
+                                          ...item.files,
+                                          documents: updatedDocs,
+                                        });
+                                      }}
+                                    >
+                                      Remove
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
 
-                            {(item.files?.video ||
-                              item.files?.pdf ||
-                              item.files?.bibtex ||
-                              item.files?.excel ||
-                              item.files?.additionalFiles?.length > 0) && (
-                              <div className="mt-2 p-2 bg-muted/50 rounded text-xs">
-                                <p className="font-medium mb-1">Uploaded Files:</p>
-                                <ul className="space-y-1">
-                                  {item.files?.video && <li>📹 Video: {item.files.video.name}</li>}
-                                  {item.files?.pdf && <li>📄 PDF: {item.files.pdf.name}</li>}
-                                  {item.files?.bibtex && <li>📚 BibTeX: {item.files.bibtex.name}</li>}
-                                  {item.files?.excel && <li>📊 Excel: {item.files.excel.name}</li>}
-                                  {item.files?.additionalFiles?.map((file, fileIndex) => (
-                                    <li key={fileIndex}>📎 {file.name}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
                         </div>
                       </Card>
                     ))}
@@ -757,7 +805,7 @@ const removeEditLearningPathItem = (index) => {
           </Dialog>
 
           <Dialog open={isEditcourseOpen} onOpenChange={setIsEditcourseOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-full max-h-[100vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit learning path: {editingcourse?.title}</DialogTitle>
                 <DialogDescription>Update your learning path content and course</DialogDescription>
@@ -786,9 +834,17 @@ const removeEditLearningPathItem = (index) => {
                       <SelectContent>
                         <SelectItem value="web-development">Web Development</SelectItem>
                         <SelectItem value="data-science">Data Science</SelectItem>
+                        <SelectItem value="machine-learning">Machine Learning</SelectItem>
                         <SelectItem value="mobile-development">Mobile Development</SelectItem>
                         <SelectItem value="design">Design</SelectItem>
                         <SelectItem value="marketing">Marketing</SelectItem>
+                        <SelectItem value="cyber-security">Cyber Security</SelectItem>
+                        <SelectItem value="database">Database</SelectItem>
+                        <SelectItem value="devops">DevOps</SelectItem>
+                        <SelectItem value="programming">Programming</SelectItem>
+                        <SelectItem value="cloud-computing">Cloud Computing</SelectItem>
+                        <SelectItem value="Blockchain">Blockchain</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -806,22 +862,6 @@ const removeEditLearningPathItem = (index) => {
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
-                  {/* <div className="space-y-2">
-                    <Label htmlFor="edit-level">Level</Label>
-                    <Select
-                      value={editcourseForm.level}
-                      onValueChange={(value) => setEditcourseForm((prev) => ({ ...prev, level: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="beginner">Beginner</SelectItem>
-                        <SelectItem value="intermediate">Intermediate</SelectItem>
-                        <SelectItem value="advanced">Advanced</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div> */}
                   <div className="space-y-2">
                     <Label htmlFor="edit-price">Price ($)</Label>
                     <Input
@@ -850,8 +890,6 @@ const removeEditLearningPathItem = (index) => {
                       placeholder="Enter new code or leave blank to keep existing"
                     />
                   </div>
-
-                  
                 </div>
 
                 <div className="space-y-4">
@@ -866,10 +904,9 @@ const removeEditLearningPathItem = (index) => {
                         <X className="mr-2 h-4 w-4" />
                         Delete Section
                     </Button>
-
-
                     </div>
                   </div>
+
                    <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                       <DialogContent className="max-w-md">
                           <DialogHeader>
@@ -893,6 +930,7 @@ const removeEditLearningPathItem = (index) => {
                           </DialogFooter>
                       </DialogContent>
                     </Dialog>
+                    
 
                   <div className="space-y-4 max-h-60 overflow-y-auto">
                     {editcourseForm.learningPath.map((item, index) => (
@@ -946,7 +984,6 @@ const removeEditLearningPathItem = (index) => {
                             </div>
                           </div>
                           
-
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label>Description</Label>
@@ -965,12 +1002,49 @@ const removeEditLearningPathItem = (index) => {
                                 placeholder="2h 30m"
                               />
                             </div>
+                            <div className="space-y-2">
+                              <Label>External Resource URLs</Label>
+
+                              
+                              { (item.urls || [""]).map((u, urlIndex) => (
+                                <div key={urlIndex} className="flex gap-2 mb-2">
+                                  <Input
+                                    type="url"
+                                    value={u}
+                                    onChange={(e) => {
+                                      const newUrls = Array.isArray(item.urls) ? [...item.urls] : [];
+                                      newUrls[urlIndex] = e.target.value;
+                                      updateEditLearningPathItem(index, "urls", newUrls);
+                                    }}
+                                    placeholder="https://youtube.com/..., https://docs.google.com/... etc."
+                                  />
+                                  <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    onClick={() => {
+                                      const newUrls = (item.urls || []).filter((_, i) => i !== urlIndex);
+                                      updateEditLearningPathItem(index, "urls", newUrls);
+                                    }}
+                                  >
+                                    ✕
+                                  </Button>
+                                </div>
+                              ))}
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateEditLearningPathItem(index, "urls", [...(item.urls || []), ""])}
+                              >
+                                + Add Another URL
+                              </Button>
+                            </div>
                           </div>
 
                           <div className="space-y-3 border-t pt-3 bg-muted/20 rounded p-3">
                             <Label className="text-sm font-medium">Module Materials</Label>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label className="text-xs">Video File (.mp4, .mov, .avi)</Label>
                                 <Input
@@ -1034,35 +1108,59 @@ const removeEditLearningPathItem = (index) => {
                                   className="text-xs"
                                 />
                               </div>
-                            </div>
+                            </div> */}
 
                             <div className="space-y-2">
-                              <Label className="text-xs">Additional Resources (Images, Documents, etc.)</Label>
+                              <Label className="text-xs">Add Resources</Label>
                               <Input
                                 type="file"
                                 multiple
-                                accept=".jpg,.jpeg,.png,.gif,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar"
+                                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.bib,.bibtex,.mp4,.mov"
                                 onChange={(e) => {
-                                  const files = Array.from(e.target.files || [])
+                                  const files = Array.from(e.target.files || []);
                                   updateEditLearningPathItem(index, "files", {
                                     ...item.files,
-                                    additionalFiles: files,
-                                  })
+                                    documents: [...(item.files.documents || []), ...files],
+                                  });
                                 }}
-                                className="text-xs"
                               />
+
                               <p className="text-xs text-muted-foreground">
                                 Supported: Images, Documents, Presentations, Archives
                               </p>
                             </div>
 
+                            
+                            <ul className="space-y-1">
+                              {item.files.existingResources?.map((res, ix) => (
+                                <li key={res._id || ix} className="flex justify-between items-center border p-2 rounded">
+                                  <a
+                                    href={res.fileUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="underline text-sm truncate"
+                                  >
+                                    {res.fileName || `Resource ${ix + 1}`}
+                                  </a>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteResource(editingcourse._id, item._id, res._id)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </li>
+                              ))}
+                            </ul>
+
+
                             {(item.files?.video ||
                               item.files?.pdf ||
                               item.files?.bibtex ||
                               item.files?.excel ||
-                              item.files?.additionalFiles?.length > 0) && (
+                              (item.files?.additionalFiles && item.files.additionalFiles.length > 0)) && (
                               <div className="mt-2 p-2 bg-muted/50 rounded text-xs">
-                                <p className="font-medium mb-1">Uploaded Files:</p>
+                                <p className="font-medium mb-1">Newly Selected Files (will be uploaded)</p>
                                 <ul className="space-y-1">
                                   {item.files?.video && <li>📹 Video: {item.files.video.name}</li>}
                                   {item.files?.pdf && <li>📄 PDF: {item.files.pdf.name}</li>}
@@ -1163,7 +1261,7 @@ const removeEditLearningPathItem = (index) => {
                       <span className="font-medium">{course.rating || 0}</span> rating
                     </div>
                     <div>
-                      {/* <span className="font-medium">{course.content}</span> lessons */}
+                      {/* placeholder */}
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">Updated {course.lastUpdated}</p>
@@ -1182,11 +1280,10 @@ const removeEditLearningPathItem = (index) => {
             ))}
           </CardContent>
         </Card>
-        {/* View Dialog (replace your old Dialog with this) */}
+
       <Dialog open={isViewcourseOpen} onOpenChange={setIsViewcourseOpen}>
-        <DialogContent className="max-w-5xl w-full mx-4 md:mx-0">
+        <DialogContent className="max-w-full mx-4 md:mx-0">
           <div className="flex items-start justify-between gap-4">
-            {/* Left header: avatar + title */}
             <div className="flex items-start gap-4">
               <Avatar className="w-14 h-14 ring-2 ring-offset-2 ring-slate-200 dark:ring-slate-700">
                 <AvatarFallback className="text-lg">
@@ -1206,18 +1303,9 @@ const removeEditLearningPathItem = (index) => {
                 </div>
               </div>
             </div>
-
-            {/* Right header actions */}
-            {/* <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={copyLink}>Copy Link</Button>
-              <Button size="sm" onClick={() => navigateToEdit(viewingcourse)}>Edit</Button>
-              <Button variant="ghost" size="sm" onClick={() => setIsViewcourseOpen(false)}>Close</Button>
-            </div> */}
           </div>
 
-          {/* Body */}
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Modules / Curriculum (main column) */}
             <div className="lg:col-span-2">
               <div className="rounded-lg border bg-white dark:bg-slate-900 p-4">
                 <div className="flex items-center justify-between mb-4">
@@ -1263,6 +1351,13 @@ const removeEditLearningPathItem = (index) => {
                             <div className="text-xs text-muted-foreground">{res.fileType}</div>
                           </a>
                         ))}
+
+                        {/* show external URLs if any */}
+                        { (section.urls || []).map((link, li) => (
+                          <a key={`url-${li}`} href={link} target="_blank" rel="noreferrer" className="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            <div className="text-sm underline text-blue-600 truncate">{link}</div>
+                          </a>
+                        )) }
                       </div>
                     </details>
                   ))}
@@ -1270,7 +1365,6 @@ const removeEditLearningPathItem = (index) => {
               </div>
             </div>
 
-            {/* Right column: Instructor / meta card */}
             <aside>
               <Card className="p-4 h-full flex flex-col justify-between">
                 <div>
@@ -1300,16 +1394,13 @@ const removeEditLearningPathItem = (index) => {
             </aside>
           </div>
 
-          {/* Footer actions */}
           <div className="mt-6 flex justify-end gap-3">
             <Button variant="ghost" onClick={() => setIsViewcourseOpen(false)}>Close</Button>
             <Button onClick={() => navigateToEdit(viewingcourse)}>Edit</Button>
           </div>
         </DialogContent>
       </Dialog>
-                 
-
+      <Toaster />
     </div>
-    
   )
 }
