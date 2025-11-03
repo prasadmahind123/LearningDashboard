@@ -10,6 +10,7 @@ import learnerRouter from './routes/learnerRoute.js';
 import learningPathRouter from './routes/learningPathRoute.js';
 import adminRouter from './routes/adminRoute.js'; // Import admin 
 import authRoute from './routes/authRoute.js'; // Import auth routes for password reset
+import aiRoute from './routes/aiRoute.js'
 
 import './config/passport.js'; // Ensure passport configuration is loaded
 import session from 'express-session';
@@ -56,7 +57,7 @@ app.use('/api/learningpaths', learningPathRouter);
 
 app.use('/api/auth/forgot-password', authRoute); // Use the auth routes for password reset
 
-
+app.use("/api/ai", aiRoute);
 
 
 

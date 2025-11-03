@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "axios": "^1.13.1",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.7.0",
     "cookie-parser": "^1.4.7",
@@ -22,11 +23,14 @@
     "express": "^5.1.0",
     "express-session": "^1.18.2",
     "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.11.0",
     "mongoose": "^8.16.1",
     "multer": "^2.0.1",
     "nodemailer": "^7.0.6",
+    "openai": "^6.7.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "pdf-parse": "^2.4.5",
     "streamifier": "^0.1.1",
     "stripe": "^18.2.1"
   },

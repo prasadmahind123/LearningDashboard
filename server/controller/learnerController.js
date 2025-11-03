@@ -195,6 +195,11 @@ export const enrollInPath = async (req, res) => {
       }
     );
 
+    await LearningPath.updateOne(
+      { _id: pathId },
+      { $addToSet: { learners: studentId } }
+    );
+
     res.json({ message: "Enrolled successfully" });
   } catch (error) {
     console.error(error);
