@@ -806,6 +806,10 @@ export const updateLearningPath = async (req, res) => {
     const path = await LearningPath.findById(id);
     if (!path) return res.status(404).json({ message: "Learning path not found" });
 
+    // Store old module IDs before modification
+    const oldModuleIds = path.content.map(m => m._id?.toString());
+
+    // --- Update main details ---
     path.title = title || path.title;
     path.description = description || path.description;
     path.category = category || path.category;
@@ -813,9 +817,10 @@ export const updateLearningPath = async (req, res) => {
     path.level = level || path.level;
     path.duration = duration || path.duration;
 
+    // --- Handle modules ---
     for (let i = 0; i < parsedContent.length; i++) {
       const moduleData = parsedContent[i];
-      const fileDescriptions = moduleData.fileDescriptions || []; // Get descriptions
+      const fileDescriptions = moduleData.fileDescriptions || [];
       let module = path.content[i] || {};
 
       module.title = moduleData.title || module.title;
@@ -827,7 +832,6 @@ export const updateLearningPath = async (req, res) => {
         ? [moduleData.urls]
         : module.urls || [];
 
-      // Handle new uploads
       const moduleFiles = req.files.filter(
         (f) =>
           f.fieldname.startsWith(`content[${i}]`) ||
@@ -839,11 +843,9 @@ export const updateLearningPath = async (req, res) => {
       for (const file of moduleFiles) {
         try {
           const uploadResult = await uploadFile(file.path, "auto");
-          
-          // Find description for this file
           const descObj = fileDescriptions.find(d => d.fileName === file.originalname);
           const fileDescription = descObj ? descObj.description : "";
-          
+
           module.resources.push({
             fileUrl: uploadResult.url,
             fileName: file.originalname,
@@ -851,7 +853,7 @@ export const updateLearningPath = async (req, res) => {
             format: uploadResult.format,
             size: uploadResult.bytes,
             publicId: uploadResult.publicId,
-            description: fileDescription, // <-- Added description
+            description: fileDescription,
           });
         } catch (error) {
           console.error("File upload failed:", error.message);
@@ -862,10 +864,53 @@ export const updateLearningPath = async (req, res) => {
     }
 
     await path.save();
+
+    // --- 🔁 Sync Learners ---
+    const newModuleIds = path.content.map(m => m._id?.toString());
+    const removedModules = oldModuleIds.filter(id => !newModuleIds.includes(id));
+    const addedModules = newModuleIds.filter(id => !oldModuleIds.includes(id));
+
+    if (removedModules.length > 0 || addedModules.length > 0) {
+      const learners = await Learner.find({ "enrolledPaths.pathId": id });
+
+      for (const learner of learners) {
+        const enrolledPath = learner.enrolledPaths.find(
+          p => p.pathId.toString() === id
+        );
+        if (!enrolledPath) continue;
+
+        // ✅ Remove deleted module IDs
+        enrolledPath.totalModules = enrolledPath.totalModules.filter(
+          mId => !removedModules.includes(mId.toString())
+        );
+
+        enrolledPath.completedModules = enrolledPath.completedModules.filter(
+          mId => !removedModules.includes(mId.toString())
+        );
+
+        // ✅ Add new module IDs (only if not already present)
+        for (const newId of addedModules) {
+          if (!enrolledPath.totalModules.some(m => m.toString() === newId)) {
+            enrolledPath.totalModules.push(newId);
+          }
+        }
+
+        // ✅ Recalculate progress
+        const total = enrolledPath.totalModules.length;
+        const completed = enrolledPath.completedModules.length;
+        enrolledPath.progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        await learner.save();
+      }
+    }
+
     res.json({ message: "Learning path updated successfully", path });
   } catch (error) {
     console.error("Error updating learning path:", error.message);
-    res.status(500).json({ message: "Failed to update learning path", error: error.message });
+    res.status(500).json({
+      message: "Failed to update learning path",
+      error: error.message,
+    });
   }
 };
 // 🧠 Delete a learning path

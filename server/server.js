@@ -28,7 +28,7 @@ const allowedOrigins = ['http://localhost:5173']
 app.use(express.json());
 app.use(cookieParser()); // Middleware to parse cookies
 app.use(cors({
-  origin: "http://localhost:5173",  // your React frontend
+  origin: ["http://localhost:5173" , "https://learning-dashboard-two.vercel.app/"],  // your React frontend
   credentials: true,                // allow cookies
 }));// Middleware for session management
 app.use(session({
