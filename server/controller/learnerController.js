@@ -39,7 +39,7 @@ export const registerLearner = async (req, res) => {
 
             res.cookie("learnerToken", token, {
             httpOnly: true,
-            sameSite: "strict",
+            sameSite: 'production' ? 'none' : 'strict',
             secure: process.env.NODE_ENV === "production",
         });
 
