@@ -29,7 +29,7 @@ export default function TeachersTab({ searchQuery }) {
 
   const handleApproval = async (id, action) => {
     try {
-      await axios.post(`/api/admin/teachers/Rs{id}/Rs{action}`, {}, {
+      await axios.post(`/api/admin/teachers/${id}/${action}`, {}, {
         withCredentials: true,
       });
       setTeachers((prev) =>
@@ -38,13 +38,13 @@ export default function TeachersTab({ searchQuery }) {
       )
     );
     } catch (err) {
-      console.error(`Error during Rs{action}:`, err);
+      console.error(`Error during ${action}:`, err);
     }
   };
 
   const deleteTeacher = async (id) => {
       try {
-        await axios.delete(`/api/admin/teachers/Rs{id}`,{
+        await axios.delete(`/api/admin/teachers/${id}`,{
           withCredentials: true,
         });
         setTeachers(prev => prev.filter(t => t._id !== id));

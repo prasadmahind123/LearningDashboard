@@ -11,6 +11,7 @@ import { StickyScroll } from '@/components/ui/sticky-scroll-reveal'
 import { motion } from "motion/react";
 import AnimatedStatsCards from '@/components/AnimatedCaed'
 import FadeInSection from '@/components/FadeInSection'
+import  LayoutGridDemo  from '@/components/LayoutGrid'
 
 
 const content = [
@@ -157,8 +158,14 @@ export default function Home() {
           </div>
         </section>
       </FadeInSection>
+      
       <FadeInSection>
-        <Courses/>
+        <section className="h-screen flex items-center justify-center w-full flex-col p-4">
+        <LayoutGridDemo/>
+        </section>
+      </FadeInSection>
+      <FadeInSection>
+          <Courses/>
       </FadeInSection>
       <FadeInSection>
         <AnimatedStatsCards/>

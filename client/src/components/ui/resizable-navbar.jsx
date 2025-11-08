@@ -88,16 +88,16 @@ export const NavItems = ({
     <motion.div
       onMouseLeave={() => setHovered(null)}
       className={cn(
-        "absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-md font-medium text-zinc-600 transition duration-200 hover:text-zinc-800 lg:flex lg:space-x-2",
+        "absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-md font-medium text-zinc-900 transition duration-200 hover:text-zinc-800 lg:flex lg:space-x-2",
         className
       )}>
       {items.map((item, idx) => (
         <NavLink
-          key={`link-Rs{idx}`}
+          key={`link-${idx}`}
           to={item.link}
           onMouseEnter={() => setHovered(idx)}
           onClick={onItemClick}
-          className="relative px-4 py-2 text-neutral-600 dark:text-neutral-300"
+          className="relative px-4 py-2 text-neutral-900 dark:text-neutral-300"
         >
           {hovered === idx && (
             <motion.div

@@ -114,6 +114,7 @@ export default function CourseDetails() {
 
   const [selectedModuleIndex, setSelectedModuleIndex] = useState(0);
   const [completedModules, setCompletedModules] = useState([]);
+  const [learnerPathDetails, setLearnerPathDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const moduleStartTime = useRef(null);
   const heartbeatTimer = useRef(null);
@@ -124,12 +125,15 @@ export default function CourseDetails() {
   const [aiSummary, setAiSummary] = useState("");
   const [aiTargetDocId, setAiTargetDocId] = useState(null);
 
+
+
   // Video player selection per module (index -> selected video url)
   const [selectedVideoByModule, setSelectedVideoByModule] = useState({});
 
   useEffect(() => {
     if (learner && course) {
       const enrollment = learner?.enrolledPaths?.find((p) => p.pathId === course._id);
+      setLearnerPathDetails(enrollment || null);
       if (enrollment?.completedModules) {
         setCompletedModules(enrollment.completedModules);
       }
@@ -154,6 +158,8 @@ export default function CourseDetails() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedModuleIndex]);
+
+
 
   const startHeartbeat = () => {
     stopHeartbeat();
@@ -254,6 +260,8 @@ export default function CourseDetails() {
   const courseDerived = useMemo(() => {
     if (!course?.content) return { totalModules: 0, completedCount: 0, percent: 0 };
 
+
+
     const totalModules = course.content.length;
     const completedCount = completedModules.length;
     const percent = totalModules === 0 ? 0 : Math.round((completedCount / totalModules) * 100);
@@ -265,13 +273,15 @@ export default function CourseDetails() {
   let progressColorClass = "";
   let textColorClass = "";
 
-  if (courseDerived.percent <= 25) {
+
+
+  if ((learnerPathDetails?.completedModules / learnerPathDetails?.totalModules) * 100 <= 25) {
     progressColorClass = "bg-red-500";
     textColorClass = "text-red-600";
   } else if (courseDerived.percent <= 50) {
     progressColorClass = "bg-yellow-500";
     textColorClass = "text-yellow-600";
-  } else if (courseDerived.percent <= 75) {
+  } else if ((learnerPathDetails?.completedModules / learnerPathDetails?.totalModules) * 100 <= 75) {
     progressColorClass = "bg-blue-500";
     textColorClass = "text-blue-600";
   } else {
@@ -358,7 +368,7 @@ export default function CourseDetails() {
           </div>
           <div className="px-2">
             <Progress
-        value={courseDerived.percent}
+        value={courseDerived.progressPercent || 0}
         color="rgb(80,200,120)"
         className="h-2 transition-all duration-500"
       />

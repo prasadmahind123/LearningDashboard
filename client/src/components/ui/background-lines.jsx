@@ -102,7 +102,7 @@ const SVG = ({
             delay: Math.floor(Math.random() * 10),
             repeatDelay: Math.floor(Math.random() * 10 + 2),
           }}
-          key={`path-first-Rs{idx}`} />
+          key={`path-first-${idx}`} />
       ))}
       {/* duplicate for more paths */}
       {paths.map((path, idx) => (
@@ -122,7 +122,7 @@ const SVG = ({
             delay: Math.floor(Math.random() * 10),
             repeatDelay: Math.floor(Math.random() * 10 + 2),
           }}
-          key={`path-second-Rs{idx}`} />
+          key={`path-second-${idx}`} />
       ))}
     </motion.svg>
   );

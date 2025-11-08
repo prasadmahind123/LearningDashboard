@@ -267,14 +267,14 @@ export default function Dashboard() {
                       </div>
                       <div className="text-right space-y-2">
                         <div className="flex space-x-2">
-                          <Link to={`/courses/learning-path/Rs{course._id}`}>
+                          <Link to={`/courses/learning-path/${course._id}`}>
                             <Button size="sm"  className = "bg-blue-500 hover:bg-blue-400 cursor-pointer" onClick={() => setSelectedcourse(course)}>
                               <Eye className="h-3 w-3 mr-1 cursor-pointer" />
                               Details
                             </Button>
                           </Link>
                           
-                          <Link to={`/mycourses/Rs{course._id}`}>
+                          <Link to={`/mycourses/${course._id}`}>
                              <Button size="sm" variant="outline" className = "cursor-pointer">
                                 <Play className="h-3 w-3 mr-1 cursor-pointer" />
                                 Continue
@@ -326,7 +326,7 @@ export default function Dashboard() {
                     {recentActivity.slice(0, 5).map((activity, index) => (
                       <div key={index} className="flex items-start space-x-3">
                         <div
-                          className={`w-2 h-2 rounded-full mt-2 Rs{
+                          className={`w-2 h-2 rounded-full mt-2 ${
                             activity.type === "certificate"
                               ? "bg-green-500"
                               : activity.type === "assignment"
@@ -539,7 +539,7 @@ export default function Dashboard() {
                             <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                               <div className="flex items-center space-x-3">
                                 <div
-                                  className={`w-8 h-8 rounded-full flex items-center justify-center Rs{
+                                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
                                     module.status === "completed"
                                       ? "bg-green-100 text-green-600"
                                       : module.status === "in-progress"
@@ -652,7 +652,7 @@ export default function Dashboard() {
                               <div>
                                 <p className="font-medium">{quiz.name}</p>
                                 <p className="text-sm text-muted-foreground">
-                                  {quiz.attempts > 0 ? `Rs{quiz.attempts} attempt(s)` : "Not attempted"}
+                                  {quiz.attempts > 0 ? `${quiz.attempts} attempt(s)` : "Not attempted"}
                                 </p>
                               </div>
                               <div className="flex items-center space-x-3">
@@ -821,10 +821,10 @@ export default function Dashboard() {
                     {chatMessages.map((message) => (
                       <div
                         key={message.id}
-                        className={`flex Rs{message.type === "user" ? "justify-end" : "justify-start"}`}
+                        className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[80%] p-3 rounded-lg text-sm Rs{
+                          className={`max-w-[80%] p-3 rounded-lg text-sm ${
                             message.type === "user" ? " text-primary-foreground bg-blue-500 hover:bg-blue-400" : "bg-muted"
                           }`}
                         >
@@ -859,7 +859,7 @@ export default function Dashboard() {
                         placeholder="Ask me about courses, progress, or platform features..."
                         className="flex-1 text-sm mb-6"
                       />
-                      <Button  type="submit" size="sm" disabled={!chatInput.trim()} className={`bg-blue-500 hover:bg-blue-400 cursor-pointer Rs{!chatInput.trim() ? "opacity-50 cursor-not-allowed" : ""}`}>
+                      <Button  type="submit" size="sm" disabled={!chatInput.trim()} className={`bg-blue-500 hover:bg-blue-400 cursor-pointer {!chatInput.trim() ? "opacity-50 cursor-not-allowed" : ""}`}>
                         <Send className="h-4 w-4" />
                       </Button>
                     </form>

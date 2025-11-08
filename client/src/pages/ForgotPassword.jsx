@@ -134,7 +134,7 @@ export default function ResetPasswordPage() {
           </CardTitle>
           <CardDescription>
             {step === 0 && "Enter your registered email to receive a verification code"}
-            {step === 1 && `We've sent a 6-digit code to Rs{email}`}
+            {step === 1 && `We've sent a 6-digit code to ${email}`}
             {step === 2 && "Create a strong password for your account"}
           </CardDescription>
         </CardHeader>

@@ -51,14 +51,13 @@ export default function MyCourses() {
   useEffect(() => {
     if (!learner?.enrolledPaths?.length || !paths?.length) return;
 
-    // Map enrolledPaths to their actual path objects and include enrollment info
     const mapped = learner.enrolledPaths
       .map((enroll) => {
         const pathObj = paths.find((p) => p._id === enroll.pathId);
         if (!pathObj) return null;
         return {
           ...pathObj,
-          enrollment: enroll, // attach enrollment info
+          enrollment: enroll, 
         };
       })
       .filter(Boolean);

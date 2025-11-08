@@ -86,10 +86,10 @@ export default function AnimatedStatsCardsAdvanced() {
               // Apply gradient background and base styles
               className={cn(
                 cardBaseStyle,
-                `bg-gradient-to-br Rs{stat.gradient} dark:opacity-90`,
+                `bg-gradient-to-br ${stat.gradient} dark:opacity-90`,
                 "text-white" // Make default text white for contrast on gradient
               )}
-              style={{ animationDelay: `Rs{index * 100}ms` }} // Staggered fade-in (requires fade-in animation in index.css)
+              style={{ animationDelay: `${index * 100}ms` }} // Staggered fade-in (requires fade-in animation in index.css)
             >
               {/* Decorative Icon Background */}
               <div className={cn(iconContainerBaseStyle, stat.iconBgColor)}>
