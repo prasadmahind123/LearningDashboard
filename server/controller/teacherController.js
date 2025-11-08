@@ -16,7 +16,7 @@ const sendTeacherToken = (teacher, res) => {
     res.cookie("teacherToken", token, {
     httpOnly: true,
     sameSite: 'production' ? 'none' : 'strict',   // ✅ allows cross-port cookies
-    secure: false,     // ✅ true only in production with HTTPS
+    secure: process.env.NODE_ENV === "production",
     maxAge: 24 * 60 * 60 * 1000,
     });
 
