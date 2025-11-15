@@ -291,7 +291,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "https://learningdashboard.onrender.com" // e.g. http://localhost:5000
+axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 
 export const AppContext = createContext();
 
@@ -380,7 +380,7 @@ export const AppProvider = ({ children }) => {
   useEffect(()=>{
     fetchAllLearners();
     fetchAllTeachers();
-  })
+  },[])
 
   const fetchEnrolledLearners = async () =>{
     try {
@@ -423,7 +423,15 @@ export const AppProvider = ({ children }) => {
             setIsAuthenticated(true);
             setUserRole("learner");
             setLearner(l.data.learner);
-
+             try {
+                await axios.post(
+                  "/api/learner/update-last-access",
+                  {}, // no pathId needed here
+                  { withCredentials: true }
+                );
+              } catch (updateError) {
+                console.warn("⚠️ Could not update last access:", updateError.message);
+              }
 
             return;
           }

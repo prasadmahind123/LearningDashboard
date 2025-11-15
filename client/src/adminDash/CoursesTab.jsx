@@ -25,6 +25,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Eye, Trash2, CheckCircle, XCircle, Star, Download, RefreshCw } from "lucide-react"
+import { useAppContext } from "@/context/AppContext"
+import toast, { Toaster } from "react-hot-toast";
 
 
 
@@ -88,23 +90,30 @@ const courses = [
 ]
 
 export default function CoursesTab({ searchQuery }) {
+  const {paths , axios} = useAppContext();
   const [selectedcourse, setSelectedcourse] = useState(null)
 
-  const filteredcourses = courses.filter(
+  const filteredcourses = paths.filter(
     (course) =>
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.category.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
-  const handleApprovecourse = (courseId) => {
-    console.log("Approving course:", courseId)
-    // Implementation for approving course
-  }
 
-  const handleRejectcourse = (courseId) => {
-    console.log("Rejecting course:", courseId)
-    // Implementation for rejecting course
+
+
+  const handleDeletePath = async(course) => {
+    try {
+      await axios.delete(`api/admin/paths/${course._id}` , {
+        withCredentials: true,
+      });
+      toast.success("Path deleted successfully");
+
+    } catch (error) {
+      console.error("Error deleting path:", error);
+      toast.error("Failed to delete path");
+    }
   }
 
   return (
@@ -136,7 +145,6 @@ export default function CoursesTab({ searchQuery }) {
                   <TableHead>Students</TableHead>
                   <TableHead className="hidden lg:table-cell">Rating</TableHead>
                   <TableHead className="hidden lg:table-cell">Price</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead className="hidden md:table-cell">Revenue</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -150,8 +158,8 @@ export default function CoursesTab({ searchQuery }) {
                         <p className="text-sm text-muted-foreground">{course.category}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{course.instructor}</TableCell>
-                    <TableCell>{course.students}</TableCell>
+                    <TableCell className="hidden md:table-cell">{course.createdBy?.fullName}</TableCell>
+                    <TableCell>{course.learners?.length}</TableCell>
                     <TableCell className="hidden lg:table-cell">
                       {course.rating > 0 ? (
                         <div className="flex items-center">
@@ -162,8 +170,8 @@ export default function CoursesTab({ searchQuery }) {
                         <span className="text-muted-foreground">No rating</span>
                       )}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell">Rs{course.price}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">Rs. {course.price}</TableCell>
+                    {/* <TableCell>
                       <Badge
                         variant={
                           course.status === "Published"
@@ -175,23 +183,11 @@ export default function CoursesTab({ searchQuery }) {
                       >
                         {course.status}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">Rs{course.revenue}</TableCell>
+                    </TableCell> */}
+                    <TableCell className="hidden md:table-cell">Rs. {course.revenue || 0}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {course.status === "Under Review" ? (
-                          <>
-                            <Button variant="outline" size="sm" className={"cursor-pointer"} onClick={() => handleApprovecourse(course.id)}>
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Approve
-                            </Button>
-                            <Button variant="outline" size="sm" className={"cursor-pointer"} onClick={() => handleRejectcourse(course.id)}>
-                              <XCircle className="h-3 w-3 mr-1" />
-                              Reject
-                            </Button>
-                          </>
-                        ) : (
-                          <>
+                       
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Button variant="outline" size="sm" onClick={() => setSelectedcourse(course)} className={"cursor-pointer"}>
@@ -215,7 +211,7 @@ export default function CoursesTab({ searchQuery }) {
                                       </div>
                                       <div>
                                         <Label>Instructor</Label>
-                                        <p className="font-medium">{selectedcourse.instructor}</p>
+                                        <p className="font-medium">{selectedcourse.createdBy?.fullName}</p>
                                       </div>
                                       <div>
                                         <Label>Category</Label>
@@ -223,19 +219,15 @@ export default function CoursesTab({ searchQuery }) {
                                       </div>
                                       <div>
                                         <Label>Price</Label>
-                                        <p className="font-medium">Rs{selectedcourse.price}</p>
+                                        <p className="font-medium">Rs. {selectedcourse.price}</p>
                                       </div>
                                       <div>
                                         <Label>Total Students</Label>
-                                        <p className="font-medium">{selectedcourse.students}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Completion Rate</Label>
-                                        <p className="font-medium">{selectedcourse.completionRate}%</p>
+                                        <p className="font-medium">{selectedcourse.learners?.length || 0}</p>
                                       </div>
                                       <div>
                                         <Label>Total Revenue</Label>
-                                        <p className="font-medium">Rs{selectedcourse.revenue}</p>
+                                        <p className="font-medium">Rs. {selectedcourse.revenue}</p>
                                       </div>
                                       <div>
                                         <Label>Rating</Label>
@@ -246,14 +238,14 @@ export default function CoursesTab({ searchQuery }) {
                                     </div>
                                     <div>
                                       <Label>Created Date</Label>
-                                      <p className="font-medium">{selectedcourse.createdDate}</p>
+                                      <p className="font-medium">{selectedcourse.createdAt?.split("T")[0]}</p>
                                     </div>
                                     <div>
                                       <Label>Last Updated</Label>
-                                      <p className="font-medium">{selectedcourse.lastUpdated}</p>
+                                      <p className="font-medium">{selectedcourse.updatedAt?.split("T")[0]}</p>
                                     </div>
                                   </div>
-                                )}
+        )}
                               </DialogContent>
                             </Dialog>
                             <AlertDialog>
@@ -271,14 +263,13 @@ export default function CoursesTab({ searchQuery }) {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction className="cursor-pointer bg-destructive text-destructive-foreground">
+                                  <AlertDialogAction onClick = {()=>handleDeletePath(course)} className="cursor-pointer bg-destructive text-destructive-foreground">
                                     Delete course
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
-                          </>
-                        )}
+                      
                       </div>
                     </TableCell>
                   </TableRow>
@@ -288,6 +279,7 @@ export default function CoursesTab({ searchQuery }) {
           </div>
         </CardContent>
       </Card>
+      <Toaster />
     </div>
   )
 }

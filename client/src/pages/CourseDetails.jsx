@@ -652,30 +652,42 @@ export default function CourseDetails() {
         </main>
 
         {/* --- AI Modal (single global modal) --- */}
-        <Dialog open={aiModalOpen} onOpenChange={(open) => { if (!open) closeAiModal(); }}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>AI Explanation</DialogTitle>
-              <DialogDescription>
-                The AI will read the selected document and provide a simplified explanation.
-              </DialogDescription>
-            </DialogHeader>
+        <Dialog
+  open={aiModalOpen}
+  onOpenChange={(open) => {
+    if (!open) closeAiModal();
+  }}
+>
+  <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+    <DialogHeader>
+      <DialogTitle>AI Explanation</DialogTitle>
+      <DialogDescription>
+        The AI will read the selected document and provide a simplified explanation.
+      </DialogDescription>
+    </DialogHeader>
 
-            <div className="min-h-[120px]">
-              {aiLoading ? (
-                <div className="flex items-center justify-center py-10"><Loader /></div>
-              ) : (
-                <div className="prose max-w-none whitespace-pre-wrap p-2">
-                  {aiSummary || "No summary available yet. Click Ask AI on any document to generate a summary."}
-                </div>
-              )}
-            </div>
+    {/* Scrollable Summary Container */}
+    <div className="min-h-[120px] max-h-[60vh] overflow-y-auto rounded-md border p-3">
+      {aiLoading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader />
+        </div>
+      ) : (
+        <div className="prose max-w-none whitespace-pre-wrap">
+          {aiSummary ||
+            "No summary available yet. Click Ask AI on any document to generate a summary."}
+        </div>
+      )}
+    </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={closeAiModal}>Close</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+    <DialogFooter>
+      <Button variant="outline" onClick={closeAiModal}>
+        Close
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
 
         <Toaster />
       </SidebarInset>

@@ -18,6 +18,7 @@ export default function TStudents() {
     const [selectedStudent, setSelectedStudent] = useState(null)
     const [enrolledLearners , setEnrolledLearner] = useState(teacher.enrolledStudents || []);
 
+    
 
       useEffect(() => {
         if (!teacher || !paths?.length || !learners?.length) return;
@@ -37,22 +38,11 @@ export default function TStudents() {
         // ✅ Update the state
         setEnrolledLearner(filteredLearners);
       }, [teacher, learners, paths]);
-
-
-    
-    
-
     
     const manageView = (student) =>{
       setSelectedStudent(student);
 
     }
-
-    
-    
-
-
-
 
       const filteredStudents = enrolledLearners.filter((student) => {
       const matchesSearch =
@@ -115,10 +105,8 @@ export default function TStudents() {
                       </TableHeader>
                       <TableBody>
                         {filteredStudents.map((student) => (
+                          
                           <TableRow key={student._id}>
-                            {
-                              
-                            }
                             <TableCell>
                               <div className="flex items-center space-x-3">
                                 <Avatar>
@@ -143,7 +131,7 @@ export default function TStudents() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <span className="text-sm">{student.lastActive || 'N/A'}</span>
+                              <span className="text-sm">{student.lastAccessedWebsite?.split("T")[0] || 'N/A'}</span>
                             </TableCell>
                             <TableCell>
                               <div className="flex space-x-2">

@@ -148,7 +148,7 @@ export default function Dashboard() {
     return "I understand you're asking about our learning platform. I can help with course navigation, progress tracking, certificates, study tips, and platform features. Could you be more specific about what you'd like to know?"
   }
 
-
+ 
   // --- UPDATED STATS CALCULATION ---
   const hoursLearned = learner?.totalLearningHours || 0; // Use totalLearningHours from schema
   const certificatesEarned = learner?.analytics?.certificatesEarned || 0; // Use analytics if available, or default to 0

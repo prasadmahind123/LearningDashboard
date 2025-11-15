@@ -59,17 +59,17 @@ export default function LearnersTab({ searchQuery }) {
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarFallback className="text-xs">{learner.avatar}</AvatarFallback>
+                          <AvatarFallback className="text-xs">{learner.fullName?.split("")[0]}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{learner.name}</p>
+                          <p className="font-medium">{learner.fullName}</p>
                           <p className="text-sm text-muted-foreground">{learner.email}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{learner.createdAt.split("T")[0]}</TableCell>
                     <TableCell>{learner.totalLearningHours}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{learner.totalCoursesEnrolled}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{learner.enrolledPaths?.length}</TableCell>
                     <TableCell>
                       <Badge variant={learner.status === "Active" ? "default" : "secondary"}>{learner.status}</Badge>
                     </TableCell>

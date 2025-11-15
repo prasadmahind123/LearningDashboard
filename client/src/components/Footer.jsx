@@ -16,7 +16,7 @@ export default function Footer() {
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">courses</h3>
+              <h3 className="font-semibold mb-4">paths</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li>
                   <p href="#" className="hover:text-foreground text-gray-500  cursor-pointer">
