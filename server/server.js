@@ -11,6 +11,8 @@ import learningPathRouter from './routes/learningPathRoute.js';
 import adminRouter from './routes/adminRoute.js'; // Import admin 
 import authRoute from './routes/authRoute.js'; // Import auth routes for password reset
 import aiRoute from './routes/aiRoute.js'
+import dotenv from 'dotenv';
+dotenv.config();
 
 import './config/passport.js'; // Ensure passport configuration is loaded
 import session from 'express-session';
@@ -28,7 +30,7 @@ const allowedOrigins = ['http://localhost:5173']
 app.use(express.json());
 app.use(cookieParser()); // Middleware to parse cookies
 app.use(cors({
-  origin: ["http://localhost:5173" , "https://learning-dashboard-two.vercel.app"],  // your React frontend
+  origin: ["http://localhost:5173"],  // your React frontend
   credentials: true,                // allow cookies
 }));// Middleware for session management
 app.use(session({

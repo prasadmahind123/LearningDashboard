@@ -14,10 +14,10 @@ const sendTeacherToken = (teacher, res) => {
   );
 
     res.cookie("teacherToken", token, {
-    httpOnly: true,
-    sameSite: 'production' ? 'none' : 'strict',   // ✅ allows cross-port cookies
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite:  'lax',
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
 
@@ -101,7 +101,7 @@ export const loginTeacher = async (req, res) => {
       message: "Login successful",
       teacher: {
         id: teacher._id,
-        fullName: teacher.fullName,   // ✅ correct field
+        fullName: teacher.fullName,  
         email: teacher.email,
         role: "teacher",
         status: teacher.status,

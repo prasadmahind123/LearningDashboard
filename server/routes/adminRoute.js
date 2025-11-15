@@ -2,7 +2,7 @@ import express from 'express';
 import Teacher from '../models/teacher.js';
 import Learner from '../models/learner.js';
 
-import { adminLogin , isAdminAuth  , adminLogout , deleteTeacher , getPendingTeachers , approveTeacher} from '../controller/adminController.js';
+import { adminLogin , isAdminAuth  , adminLogout , deleteTeacher , getPendingTeachers , approveTeacher , deletePath} from '../controller/adminController.js';
 
 import authAdmin from '../middleware/authAdmin.js';
 
@@ -61,5 +61,7 @@ adminRouter.get('/test' , (req, res) => {
     res.send({message: "Admin route is working"});
 }
 );
+
+adminRouter.delete('/paths/:id', authAdmin, deletePath);
 
 export default adminRouter;

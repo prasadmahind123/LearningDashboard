@@ -101,6 +101,7 @@ export const loginLearner = async (req, res) => {
                 createdAt:  learner.createdAt,
                 learningHours : learner.totalLearningHours,
                 totalCoursesEnrolled : learner.totalCoursesEnrolled,
+                lastAccessedWebsite : learner.lastAccessedWebsite
 
             }
         });
@@ -139,7 +140,8 @@ export const isAuthLearner = async (req, res) => {
     totalLearningHours: learner.totalLearningHours,
     enrolledPaths: learner.enrolledPaths, // not enrollPaths
     progress: learner.progressStats, // or progress if you have it
-    createdAt: learner.createdAt
+    createdAt: learner.createdAt,
+    lastAccessedWebsite : learner.lastAccessedWebsite
   }
 });
 
@@ -398,6 +400,26 @@ export const getLearningProgress = async (req, res) => {
   } catch (error) {
     console.error("❌ getLearningProgress error:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+//  /api/learner/update-last-access
+export const updateLastAccess = async (req, res) => {
+  try {
+    const learnerId = req.userId;
+
+    const updated = await Learner.findByIdAndUpdate(
+      learnerId,
+      {
+        lastAccessedWebsite: new Date(),
+      },
+      { new: true }
+    );
+
+    res.json({ success: true, learner: updated });
+  } catch (error) {
+    console.error("Error updating last access:", error);
+    res.status(500).json({ success: false, message: "Failed to update last access" });
   }
 };
 

@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
 import Teacher from '../models/teacher.js';
+import LearningPath from "../models/learningPath.js";
+import Learner from '../models/learner.js';
 
 
 //admin login : /api/admin/login
@@ -126,6 +128,39 @@ export const deleteTeacher = async (req, res) => {
     res.status(200).json({ success: true, message: 'Teacher deleted successfully' });
     } catch (err) {
         console.error('Error deleting teacher:', err);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+}
+export const deletePath = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const learningPath = await LearningPath.findById(id);
+    const teacherId = learningPath.createdBy._id; 
+    if (!learningPath) {
+      return res.status(404).json({ success: false, message: 'Learning Path not found' });
+    }
+
+    const path = await LearningPath.findByIdAndDelete(id);
+
+    await Learner.updateMany(
+      { "enrolledPaths.pathId": id },
+      { $pull: { enrolledPaths: { pathId: id } } }
+    );
+
+    await Teacher.findByIdAndUpdate(
+      teacherId,
+      { $pull: { createdPaths: id } },
+      { new: true }
+    );
+
+    if (!path) {
+      return res.status(404).json({ success: false, message: 'Path not found' });
+    }
+    res.status(200).json({ success: true, message: 'Path deleted successfully' });
+    }
+    catch (err) {
+        console.error('Error deleting path:', err);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 }

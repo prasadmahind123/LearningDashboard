@@ -924,21 +924,41 @@ export const deleteLearningPath = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid path ID" });
     }
 
-    const deletedPath = await LearningPath.findByIdAndDelete(id);
-    if (!deletedPath) {
+    // ✅ Find path before deleting
+    const path = await LearningPath.findById(id);
+    if (!path) {
       return res.status(404).json({ success: false, message: "Learning path not found" });
     }
 
-    // ✅ Remove reference from Teacher
+    // ✅ Ensure only the owner teacher can delete
+    if (path.createdBy.toString() !== teacherId) {
+      return res.status(403).json({ success: false, message: "Not authorized to delete this learning path" });
+    }
+
+    // ✅ 1. Remove path from teacher’s createdPaths
     await Teacher.findByIdAndUpdate(
       teacherId,
       { $pull: { createdPaths: id } },
       { new: true }
     );
 
+    // ✅ 2. Remove path from all learners’ enrolledPaths
+    await Learner.updateMany(
+      { "enrolledPaths.pathId": id },
+      { $pull: { enrolledPaths: { pathId: id } } }
+    );
+
+    // ✅ 3. Delete the learning path document itself
+    await LearningPath.findByIdAndDelete(id);
+
+    // ✅ 4. Optionally recalc teacher’s total path count (if you store it separately)
+    const updatedTeacher = await Teacher.findById(teacherId);
+    const totalPaths = updatedTeacher.createdPaths.length;
+
     res.status(200).json({
       success: true,
       message: "Learning path deleted successfully",
+      totalPaths, // updated count
     });
   } catch (error) {
     console.error("Error deleting learning path:", error);
@@ -949,6 +969,7 @@ export const deleteLearningPath = async (req, res) => {
     });
   }
 };
+
 
 // 🧠 Delete a module by title
 export const deleteModuleByTitle = async (req, res) => {

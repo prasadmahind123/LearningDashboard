@@ -35,6 +35,11 @@ enrolledPaths: [
   },
 ],
 
+  lastAccessedWebsite: {
+    type: Date,
+    default: null,
+  },
+
   // Total summary stats
   totalLearningHours: {
     type: Number,
