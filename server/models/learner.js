@@ -14,6 +14,15 @@ const learnerSchema = new mongoose.Schema({
     lowercase: true,
   },
 
+  bio: {
+    type: String,
+    default: "",
+  },
+  phone: {
+    type: String,
+    default: "",
+  },
+
   password: {
     type: String,
     required: true,
@@ -34,6 +43,31 @@ enrolledPaths: [
     lastAccessed: { type: Date, default: Date.now },
   },
 ],
+
+educationLevel: {
+  type: String,
+  default: "",
+},
+learningStyle: {
+  type: String,
+  default: "",
+},
+interests: [
+  { type: String }
+],
+goals: [  
+  { type: String }
+],
+university: {
+  type: String,
+  default: "",
+},
+socialLinks: {
+  linkedin: { type: String, default: "" },
+  github: { type: String, default: "" },
+  portfolio: { type: String, default: "" },
+},
+
 
   lastAccessedWebsite: {
     type: Date,

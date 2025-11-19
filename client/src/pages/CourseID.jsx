@@ -286,6 +286,11 @@ export default function CourseID() {
                       <Award className="h-4 w-4 text-blue-500" /> Expert
                     </div>
                   </div>
+                  <div className="flex items-center">
+                    <p className="font-mono mt-4 text-gray-500 text-sm">
+                      {path.createdBy?.bio}
+                    </p>
+                  </div>
                 </div>
               </div>
             </motion.div>

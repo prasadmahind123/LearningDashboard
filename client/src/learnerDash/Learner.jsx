@@ -18,6 +18,7 @@ export default function Learner() {
         { name: "My learning path", path: "/learner/my-courses"},
         { name: "Progress", path: "/learner/progress"},
         { name: "Brows New learning path", path: "/courses"},
+        { name: "Update Profile", path: "/learner/update-profile"},
     ];
      const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
       const { navigate, setUserRole } = useAppContext();

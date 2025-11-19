@@ -509,8 +509,8 @@ export default function TDashboard() {
   };
 
   return (
-    <div>
-        <div className="flex justify-between items-center mb-8">
+    <div className="flex-1 h-[100vh] overflow-y-scroll p-8 no-scrollbar">
+        <main className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">Welcome , {teacher?.fullName || ''}</h1>
             <p className="text-muted-foreground">Manage your paths and track your success</p>
@@ -1193,7 +1193,7 @@ export default function TDashboard() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </div>
+        </main>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>

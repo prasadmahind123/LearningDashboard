@@ -727,7 +727,7 @@ export const getTeacherLearningPaths = async (req, res) => {
     const learningPaths = await LearningPath.find({
         createdBy: req.userId
       })
-      .populate('createdBy', 'name email')
+      .populate('createdBy', 'name email bio')
       .sort({
         createdAt: -1
       });
@@ -751,7 +751,7 @@ export const getTeacherLearningPaths = async (req, res) => {
 export const getAllLearningPaths = async (req, res) => {
   try {
     const paths = await LearningPath.find()
-      .populate("createdBy", "fullName email createdPaths expertise") // optional, show teacher info
+      .populate("createdBy", "fullName email createdPaths expertise bio") // optional, show teacher info
       .lean();
 
     res.status(200).json({
@@ -773,7 +773,7 @@ export const learningPathById = async (req, res) => {
     const {
       id
     } = req.params; // use params instead of body
-    const learningPath = await LearningPath.findById(id).populate("createdBy", "fullName email createdPaths expertise");
+    const learningPath = await LearningPath.findById(id).populate("createdBy", "fullName email createdPaths expertise bio");
 
     if (!learningPath) {
       return res.status(404).json({

@@ -59,7 +59,7 @@ export default function TStudents() {
  
   
   return (
-    <div className="no-scrollbar flex-1 h-[95vh] overflow-y-scroll 
+    <div className="no-scrollbar flex-1 h-[100vh] overflow-y-scroll 
         flex flex-col justify-between">
          <div value="students">
               <div className="space-y-6">

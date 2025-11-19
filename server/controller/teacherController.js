@@ -104,15 +104,22 @@ export const loginTeacher = async (req, res) => {
         fullName: teacher.fullName,  
         email: teacher.email,
         role: "teacher",
+        bio: teacher.bio,
+        phone: teacher.phone,
         status: teacher.status,
         qualification: teacher.qualification,
-        institution: teacher.institution,
+        university: teacher.university,
         expertise: teacher.expertise,
         createdPaths: teacher.createdPaths,
         enrolledStudents: teacher.enrolledStudents,
         certificates: teacher.certificates,
         revenue: teacher.revenue,
         createdAt: teacher.createdAt,
+        teachingStyle: teacher.teachingStyle,
+        experienceLevel: teacher.experienceLevel,
+        averageRating: teacher.averageRating,
+        socialLinks: teacher.socialLinks,
+        teachingStatus: teacher.teachingStatus,
       },
     });
   } catch (error) {
@@ -146,15 +153,22 @@ export const isAuthTeacher = async (req, res) => {
         fullName: teacher.fullName,
         email: teacher.email,
         role: "teacher",
+        bio: teacher.bio,
+        phone: teacher.phone,
         status: teacher.status,
         qualification: teacher.qualification,
-        institution: teacher.institution,
+        university: teacher.university,
         expertise: teacher.expertise,
         createdPaths: teacher.createdPaths,
         enrolledStudents: teacher.enrolledStudents,
         certificates: teacher.certificates,
         revenue: teacher.revenue,
         createdAt: teacher.createdAt,
+        teachingStyle: teacher.teachingStyle,
+        experienceLevel: teacher.experienceLevel,
+        averageRating: teacher.averageRating,
+        socialLinks: teacher.socialLinks,
+        teachingStatus: teacher.teachingStatus,
       },
     });
   } catch (error) {
@@ -206,5 +220,21 @@ export const getAllTeachers = async (req, res) => {
     res.json({ success: true, teachers });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to fetch teachers" });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const teacherId = req.userId;
+    const updates = req.body;
+    const updatedTeacher = await Teacher.findByIdAndUpdate(teacherId, updates, { new: true });
+
+    if (!updatedTeacher) {
+      return res.status(404).json({ success: false, message: "Teacher not found" });
+    }
+    res.json({ success: true, message: "Profile updated successfully", teacher: updatedTeacher });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

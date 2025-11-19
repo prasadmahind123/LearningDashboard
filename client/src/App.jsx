@@ -10,10 +10,12 @@ import CoursesPage from "./pages/CoursesPage";
 import Learner from "./learnerDash/Learner";
 import Dashboard from "./learnerDash/Dashboard";
 import MyCourses from "./learnerDash/MyCourses";
+import UpdateLearnerProfile from "./learnerDash/UpdateLearnerProfile";
 import Teacher from "./teacherDash/Teacher";
 import Progress from "./learnerDash/Progress";
 import TDashboard from "./teacherDash/TDashboard";
 import TCourses from "./teacherDash/TCourses";
+import UpdateProfile from "./teacherDash/UpdateProfile";
 import TStudents from "./teacherDash/TStudents";
 import Revenue from "./teacherDash/Revenue";
 import Admin from "./adminDash/Admin";
@@ -50,12 +52,14 @@ function App() {
             <Route index element={<Dashboard/>} />
             <Route path="my-courses" element={<MyCourses />} />
             <Route path="progress" element={<Progress/>} />
+            <Route path="update-profile" element={<UpdateLearnerProfile />} />
           </Route>
           <Route path="/teacher" element={<ProtectedRoute allowedRoles={["teacher"]}><Teacher /></ProtectedRoute>}>
             <Route index element={<TDashboard />} />
             <Route path="courses" element={<TCourses />} />
             <Route path="students" element={<TStudents />} />
             <Route path="revenue" element={<Revenue />} />
+            <Route path="update-profile" element={<UpdateProfile />} />
           </Route>
           <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><Admin /></ProtectedRoute>} />
         </Routes>

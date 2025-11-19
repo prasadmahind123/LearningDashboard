@@ -17,6 +17,7 @@ export default function Teacher() {
         { name: "My learning paths", path: "/teacher/courses"},
         { name: "My Students", path: "/teacher/students"},
         { name: "Revenue", path: "/teacher/revenue"},
+        { name: "Update Profile", path: "/teacher/update-profile"},
     ];
      const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
       const { navigate, setUserRole , teacher } = useAppContext();

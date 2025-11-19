@@ -11,6 +11,12 @@ const teacherSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
   },
+  bio: {
+    type: String,
+  },
+  phone: {
+    type: String,
+  },
   password: {
     type: String,
     required: [true, "Password is required"],
@@ -28,12 +34,12 @@ const teacherSchema = new mongoose.Schema({
   qualification: {
     type: String,
   },
-  institution: {
+  university: {
     type: String,
   },
-  expertise: {
-    type: String,
-  }, // e.g. ["Math", "AI", "Web Development"]
+  expertise: [
+    { type: String }
+  ],  
   createdPaths: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -50,6 +56,16 @@ const teacherSchema = new mongoose.Schema({
     type: Number,
     default: 0, // Initial revenue is 0
   },
+  socialLinks: {
+    linkedin: { type: String },
+    github: { type: String },
+    twitter: { type: String },
+  },
+  averageRating: { type: Number, default: 0 },
+  teachingStyle: { type: String },
+  experienceLevel: { type: String },
+  availability: { type: String },
+  teachingStatus: { type: String},
   resetOtp: { type: String },
   resetOtpExpires: { type: Date },
 }, {

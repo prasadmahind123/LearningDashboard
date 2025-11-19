@@ -12,6 +12,7 @@ import { motion } from "motion/react";
 import AnimatedStatsCards from '@/components/AnimatedCaed'
 import FadeInSection from '@/components/FadeInSection'
 import  LayoutGridDemo  from '@/components/LayoutGrid'
+import { MovingCards } from '@/components/MovingCards'
 
 
 const content = [
@@ -98,7 +99,7 @@ const content = [
 ];
 
 export default function Home() {
-  const {learners , paths , teachers , learner} = useAppContext();
+  const { learner} = useAppContext();
 
   
   return (
@@ -165,7 +166,7 @@ export default function Home() {
         </section>
       </FadeInSection>
       <FadeInSection>
-          <Courses/>
+          <MovingCards></MovingCards>
       </FadeInSection>
       <FadeInSection>
         <AnimatedStatsCards/>

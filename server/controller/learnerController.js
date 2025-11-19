@@ -101,8 +101,15 @@ export const loginLearner = async (req, res) => {
                 createdAt:  learner.createdAt,
                 learningHours : learner.totalLearningHours,
                 totalCoursesEnrolled : learner.totalCoursesEnrolled,
-                lastAccessedWebsite : learner.lastAccessedWebsite
-
+                lastAccessedWebsite : learner.lastAccessedWebsite,
+                phone: learner.phone,
+                bio: learner.bio,
+                educationLevel: learner.educationLevel,
+                interests: learner.interests,
+                university: learner.university,
+                learningStyle: learner.learningStyle,
+                goals: learner.goals,
+                socialLinks: learner.socialLinks
             }
         });
 
@@ -141,7 +148,16 @@ export const isAuthLearner = async (req, res) => {
     enrolledPaths: learner.enrolledPaths, // not enrollPaths
     progress: learner.progressStats, // or progress if you have it
     createdAt: learner.createdAt,
-    lastAccessedWebsite : learner.lastAccessedWebsite
+    lastAccessedWebsite : learner.lastAccessedWebsite,
+    phone: learner.phone,
+    bio: learner.bio,
+    educationLevel: learner.educationLevel,
+    interests: learner.interests,
+    university: learner.university,
+    learningStyle: learner.learningStyle,
+    goals: learner.goals,
+    socialLinks: learner.socialLinks
+
   }
 });
 
@@ -420,6 +436,22 @@ export const updateLastAccess = async (req, res) => {
   } catch (error) {
     console.error("Error updating last access:", error);
     res.status(500).json({ success: false, message: "Failed to update last access" });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const learnerId = req.userId;
+    const updates = req.body;
+    const updatedLearner = await Learner.findByIdAndUpdate(learnerId, updates, { new: true });
+
+    if (!updatedLearner) {
+      return res.status(404).json({ success: false, message: "Learner not found" });
+    }
+    res.json({ success: true, message: "Profile updated successfully", learner: updatedLearner });
+  } catch (error) { 
+    console.error("Error updating profile:", error);
+    res.status(500).json({ success: false, message: "Error updating profile" });
   }
 };
 
