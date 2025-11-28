@@ -1,107 +1,75 @@
+"use client"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Eye, Trash2, Download, RefreshCw } from "lucide-react"
-import { useAppContext } from "../context/AppContext.jsx"
-
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { MoreHorizontal } from "lucide-react"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useAppContext } from "@/context/AppContext"
 
 export default function LearnersTab({ searchQuery }) {
-   const {axios , learners , setLearners} = useAppContext()
+  const { learners = [] } = useAppContext();
 
-
+  const filteredLearners = learners.filter(l => 
+    l.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    l.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>All Learners ({learners.length})</span>
-            <div className="flex items-center gap-2 ">
-              <Button variant="outline" size="sm" className="cursor-pointer">
-                <Download className="h-4 w-4 mr-2 " />
-                Export
-              </Button>
-              <Button variant="outline" size="sm" className="cursor-pointer">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-          </CardTitle>
-          <CardDescription>Manage and monitor all registered learners</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Learner</TableHead>
-                  <TableHead className="hidden md:table-cell">Join Date</TableHead>
-                  <TableHead>Learning Hours</TableHead>
-                  <TableHead className="hidden lg:table-cell">Total Learning Paths</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {learners.map((learner) => (
-                  <TableRow key={learner.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
+    <Card className="border-none shadow-md bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+      <CardHeader>
+        <CardTitle>Learner Management</CardTitle>
+        <CardDescription>View and manage registered students.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>User</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Enrolled Paths</TableHead>
+              <TableHead>Joined Date</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredLearners.length > 0 ? (
+                filteredLearners.map((learner) => (
+                <TableRow key={learner._id}>
+                    <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarFallback className="text-xs">{learner.fullName?.split("")[0]}</AvatarFallback>
+                            <AvatarFallback>{learner.fullName?.split("")[0]}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{learner.fullName}</p>
-                          <p className="text-sm text-muted-foreground">{learner.email}</p>
+                            <div className="font-bold">{learner.name}</div>
+                            <div className="text-xs text-muted-foreground">{learner.email}</div>
                         </div>
-                      </div>
+                    </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{learner.createdAt.split("T")[0]}</TableCell>
-                    <TableCell>{learner.totalLearningHours}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{learner.enrolledPaths?.length}</TableCell>
                     <TableCell>
-                      <Badge variant={learner.status === "Active" ? "default" : "secondary"}>{learner.status}</Badge>
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{learner.lastActive}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-
-                        <AlertDialog>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Learner Account</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete {learner.name}'s account? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction className="bg-destructive text-destructive-foreground cursor-pointer">
-                                Delete Account
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                    <TableCell>{learner.enrolledPaths?.length || 0}</TableCell>
+                    <TableCell>{new Date(learner.createdAt || Date.now()).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                        <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
                     </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                </TableRow>
+                ))
+            ) : (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        No learners found.
+                    </TableCell>
+                </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   )
 }

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BookOpen, Eye, EyeOff } from "lucide-react"
 import { useAppContext } from "../context/AppContext.jsx"
+import toast,{Toaster} from "react-hot-toast"
 
 export default function Login() {
 
@@ -30,7 +31,7 @@ const handleLogin = async (e) => {
           setUserRole(userType);
           navigate("/teacher");
         } else {
-          alert("Your account is not approved yet. Please wait for admin approval.");
+          toast.error("Your account is not approved yet. Please wait for admin approval.");
         }
       } else {
         // learners and admins don't have approval status
@@ -39,20 +40,20 @@ const handleLogin = async (e) => {
         else if (userType === "admin") navigate("/admin");
       }
     } else {
-      alert("Login failed.");
+      toast.error(data.message || "Login failed");
     }
   } catch (error) {
   console.error("Login error:", error);
   if (error.response) {
     if (error.response.status === 403) {
-      alert("Your account is not approved yet. Please wait for admin approval.");
+      toast.error("Your account is not approved yet. Please wait for admin approval.");
     } else if (error.response.status === 401) {
-      alert("Invalid email or password.");
+      toast.error("Invalid email or password. Please try again.");
     } else {
-      alert("An error occurred: " + error.response.data.message);
+      toast.error(error.response.data.message || "An error occurred during login");
     }
   } else {
-    alert("Server is not responding. Please try again later.");
+    toast.error("Network error. Please check your connection and try again.");
   }
 }
 };
@@ -61,7 +62,9 @@ const handleLogin = async (e) => {
   useEffect(() => {
     if (userRole) {
       if (userRole === "learner") navigate("/learner");
-      else if (userRole === "teacher") navigate("/teacher");
+      else if (userRole === "teacher"){
+         navigate("/teacher");
+      }
       else if (userRole === "admin") navigate("/admin");
     }
   }, [userRole, navigate]);
@@ -151,6 +154,8 @@ const handleLogin = async (e) => {
           </p>
         </CardFooter>
       </Card>
+      <Toaster/>
+      
     </div>
   )
 }

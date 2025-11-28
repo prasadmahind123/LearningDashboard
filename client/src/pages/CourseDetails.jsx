@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
-import { useAppContext } from "../context/AppContext.jsx";
+import { useAppContext } from "@/context/AppContext";
 import { useParams, Link } from "react-router-dom";
 import {
   Sidebar,
@@ -10,9 +10,10 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenuItem,
-  SidebarSeparator,
-  SidebarTrigger,
+  SidebarMenuButton,
   SidebarProvider,
+  SidebarRail,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,29 +26,26 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
-import {
-  FileArchive,
+  FileText,
+  FileVideo,
   FileAudio,
   FileSpreadsheet,
-  FileText ,
-  FileVideo,
   ImageIcon,
   Globe,
   CheckCircle,
+  Circle,
+  PlayCircle,
+  Lock,
   ArrowLeft,
-  BookOpen,
-  Download,
+  MessageSquare,
+  Maximize2,
+  Loader2 // Imported Loader2 icon
 } from "lucide-react";
-import { Loader } from "@/components/Loader.jsx";
 import toast, { Toaster } from "react-hot-toast";
 import { cn } from "@/lib/utils";
-
-// dialog from your UI (used for AI modal)
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -56,7 +54,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// --- Internal Loader Component ---
+const Loader = () => (
+  <div className="flex h-full w-full items-center justify-center p-10">
+    <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+  </div>
+);
+
+// --- Icons Map ---
 const fileTypeIcons = {
   pdf: FileText,
   video: FileVideo,
@@ -68,68 +76,56 @@ const fileTypeIcons = {
   link: Globe,
 };
 
-// helpers to detect video URLs and extract youtube id / thumbnail
-const isYouTubeUrl = (url) => {
-  return /(youtube\.com\/watch\?v=|youtu\.be\/)/i.test(url);
-};
+// --- Video Helpers ---
+const isYouTubeUrl = (url) => /(youtube\.com\/watch\?v=|youtu\.be\/)/i.test(url);
 const getYouTubeId = (url) => {
   if (!url) return null;
-  const ytMatch =
-    url.match(
-      /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/
-    ) || [];
-  return ytMatch[1] || null;
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  return match?.[1] || null;
 };
 const getYouTubeEmbed = (url) => {
   const id = getYouTubeId(url);
-  if (!id) return null;
-  return `https://www.youtube.com/embed/${id}`;
+  // Added rel=0 to prevent related videos from other channels
+  return id ? `https://www.youtube.com/embed/${id}?autoplay=1&modestbranding=1&rel=0` : null;
 };
 const getYouTubeThumbnail = (url) => {
   const id = getYouTubeId(url);
-  if (!id) return null;
-  return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
 };
 
 const isVimeoUrl = (url) => /vimeo\.com/i.test(url);
 const getVimeoEmbed = (url) => {
-  // simple embed conversion for vimeo: https://player.vimeo.com/video/{id}
   const m = url.match(/vimeo\.com\/(\d+)/);
-  if (m && m[1]) return `https://player.vimeo.com/video/${m[1]}`;
-  return null;
+  return m?.[1] ? `https://player.vimeo.com/video/${m[1]}` : null;
 };
 
-const isDirectVideo = (url) =>
-  /\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i.test(String(url || ""));
+const isDirectVideo = (url) => /\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i.test(String(url || ""));
 
 export default function CourseDetails() {
   const { paths, learner, axios } = useAppContext();
   const { courseId } = useParams();
 
-  // Find the course
-  const course = useMemo(() => paths.find((p) => p._id === courseId), [
-    paths,
-    courseId,
-  ]);
+  const course = useMemo(() => paths.find((p) => p._id === courseId), [paths, courseId]);
 
   const [selectedModuleIndex, setSelectedModuleIndex] = useState(0);
   const [completedModules, setCompletedModules] = useState([]);
   const [learnerPathDetails, setLearnerPathDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const moduleStartTime = useRef(null);
-  const heartbeatTimer = useRef(null);
-
-  // AI modal state
+  
+  // AI Modal
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState("");
   const [aiTargetDocId, setAiTargetDocId] = useState(null);
 
-
-
-  // Video player selection per module (index -> selected video url)
+  // Video Selection
   const [selectedVideoByModule, setSelectedVideoByModule] = useState({});
 
+  // Timers
+  const moduleStartTime = useRef(null);
+  const heartbeatTimer = useRef(null);
+
+  // --- Effects ---
   useEffect(() => {
     if (learner && course) {
       const enrollment = learner?.enrolledPaths?.find((p) => p.pathId === course._id);
@@ -140,54 +136,36 @@ export default function CourseDetails() {
     }
   }, [learner, course]);
 
-  // Start timer when module changes
   useEffect(() => {
     moduleStartTime.current = new Date();
-
-    const handleBeforeUnload = async () => {
-      await sendTimeSpent();
-    };
+    const handleBeforeUnload = async () => await sendTimeSpent();
     window.addEventListener("beforeunload", handleBeforeUnload);
-
     startHeartbeat();
-
     return () => {
       stopHeartbeat();
       sendTimeSpent();
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedModuleIndex]);
-
-
 
   const startHeartbeat = () => {
     stopHeartbeat();
-    heartbeatTimer.current = setInterval(() => {
-      sendTimeSpent();
-    }, 5 * 60 * 1000);
+    heartbeatTimer.current = setInterval(() => sendTimeSpent(), 5 * 60 * 1000);
   };
 
   const stopHeartbeat = () => {
     if (heartbeatTimer.current) clearInterval(heartbeatTimer.current);
   };
 
-  const handleSelectModule = (index) => setSelectedModuleIndex(index);
-
   const selectedModule = useMemo(() => {
-    if (course && course.content && selectedModuleIndex < course.content.length) {
-      return course.content[selectedModuleIndex];
-    }
-    return null;
+    return course?.content?.[selectedModuleIndex] || null;
   }, [course, selectedModuleIndex]);
 
   const sendTimeSpent = async () => {
     if (!selectedModule || !moduleStartTime.current) return;
-
     const now = new Date();
     const timeSpentHours = (now - moduleStartTime.current) / (1000 * 60 * 60);
     if (timeSpentHours <= 0) return;
-
     moduleStartTime.current = new Date();
 
     try {
@@ -205,7 +183,6 @@ export default function CourseDetails() {
 
   const toggleComplete = async (moduleId) => {
     try {
-      setIsLoading(true);
       const isCompleted = completedModules.includes(moduleId);
       const updatedModules = isCompleted
         ? completedModules.filter((id) => id !== moduleId)
@@ -225,79 +202,28 @@ export default function CourseDetails() {
       );
 
       if (res.data.message === "Module marked as incomplete") {
-        toast.error("Unmarked");
+        toast("Progress Updated", { icon: "↩️" });
       } else {
-        toast.success("Marked");
+        toast.success("Module Completed!");
       }
     } catch (error) {
       console.log("❌ Failed to update progress:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    const fetchLearnerProgress = async () => {
-      try {
-        setIsLoading(true);
-        const res = await axios.get(`/api/learner/progress/${learner._id}/${courseId}`);
-        const enrollment = res.data.enrolledPath;
-
-        if (enrollment?.completedModules) {
-          setCompletedModules(enrollment.completedModules);
-        }
-      } catch (error) {
-        console.log("❌ Failed to fetch progress:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (learner && courseId) fetchLearnerProgress();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [learner, courseId]);
-
   const courseDerived = useMemo(() => {
     if (!course?.content) return { totalModules: 0, completedCount: 0, percent: 0 };
-
-
-
     const totalModules = course.content.length;
     const completedCount = completedModules.length;
     const percent = totalModules === 0 ? 0 : Math.round((completedCount / totalModules) * 100);
-
     return { totalModules, completedCount, percent };
   }, [course, completedModules]);
 
-  // Dynamically assign colors based on completion %
-  let progressColorClass = "";
-  let textColorClass = "";
-
-
-
-  if ((learnerPathDetails?.completedModules / learnerPathDetails?.totalModules) * 100 <= 25) {
-    progressColorClass = "bg-red-500";
-    textColorClass = "text-red-600";
-  } else if (courseDerived.percent <= 50) {
-    progressColorClass = "bg-yellow-500";
-    textColorClass = "text-yellow-600";
-  } else if ((learnerPathDetails?.completedModules / learnerPathDetails?.totalModules) * 100 <= 75) {
-    progressColorClass = "bg-blue-500";
-    textColorClass = "text-blue-600";
-  } else {
-    progressColorClass = "bg-green-500";
-    textColorClass = "text-green-600";
-}
-
-
   const isSelectedModuleCompleted = selectedModule && completedModules.includes(selectedModule._id);
 
-  // video helpers
   const getModuleVideoUrls = (module) => {
     if (!module) return [];
-    const urls = module.urls || [];
-    // normalize into absolute strings
-    return urls.filter(Boolean);
+    return (module.urls || []).filter(Boolean);
   };
 
   const openAiForDocument = async (docId) => {
@@ -306,391 +232,337 @@ export default function CourseDetails() {
     setAiSummary("");
     setAiLoading(true);
     setAiModalOpen(true);
-
     try {
-      // call the GET endpoint you specified
       const { data } = await axios.get(`/api/ai/describe-document/${docId}`, { withCredentials: true });
       setAiSummary(data?.summary || data?.explanation || "No summary returned.");
     } catch (err) {
-      console.error("AI describe error: ", err);
       setAiSummary("AI failed to generate a summary. Try again later.");
     } finally {
       setAiLoading(false);
     }
   };
 
-  const closeAiModal = () => {
-    setAiModalOpen(false);
-    setAiLoading(false);
-    setAiSummary("");
-    setAiTargetDocId(null);
+  // --- Handlers for Video Switching ---
+  const handleVideoSelect = (moduleIndex, url) => {
+    setSelectedVideoByModule(prev => ({
+      ...prev,
+      [moduleIndex]: url
+    }));
   };
 
-  // video thumbnail click (set selected video for this module index)
-  const selectModuleVideo = (moduleIndex, videoUrl) => {
-    setSelectedVideoByModule((prev) => ({ ...prev, [moduleIndex]: videoUrl }));
-  };
-
-  if (!course) {
-    return (
-      <div className="min-h-screen grid place-items-center p-6">
-        <Card className="max-w-lg">
-          <CardHeader>
-            <CardTitle>Course Not Found</CardTitle>
-            <CardDescription>The course you are looking for doesn’t exist or is unavailable.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link to="/learner">
-              <Button>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Library
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return <Loader />;
-  }
+  if (!course) return <div className="h-screen grid place-items-center"><Loader /></div>;
+  if (isLoading) return <Loader />;
 
   return (
     <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <div className="flex items-center gap-2 px-2 py-1">
-            <div>
-              <div className="text-lg font-semibold leading-none">{course?.title || "Course Title"}</div>
-              <div className="text-xs text-muted-foreground">{course?.category || "Category"}</div>
-            </div>
-          </div>
-          <div className="px-2">
-            <Progress
-        value={courseDerived.progressPercent || 0}
-        color="rgb(80,200,120)"
-        className="h-2 transition-all duration-500"
-      />
-
-            <div className="flex justify-between text-muted-foreground mt-1">
-              <span className="text-sm">
-                {courseDerived.completedCount}/{courseDerived.totalModules} modules
-              </span>
-              <span className={cn("text-sm font-medium", textColorClass)}>
-                {courseDerived.percent}%
-              </span>
-            </div>
-          </div>
-
-        </SidebarHeader>
-
-        <SidebarContent>
-          {course?.content?.length > 0 ? (
-            <SidebarGroup>
-              <SidebarGroupLabel>
-                <span className="text-lg">Course Modules</span>
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                {course.content.map((module, index) => {
-                  const fileType = module?.resources?.[0]?.fileType?.toLowerCase() || null;
-                  const Icon = fileType && fileTypeIcons[fileType] ? fileTypeIcons[fileType] : BookOpen;
-                  const isCompleted = completedModules.includes(module._id);
-
-                  return (
-                    <SidebarMenuItem
-                      key={module._id || index}
-                      active={selectedModuleIndex === index}
-                      onClick={() => handleSelectModule(index)}
-                      className={cn(
-                        "cursor-pointer rounded-md p-2", // Added padding and rounded-md
-                        selectedModuleIndex === index ? "bg-gray-100" : "" // Apply bg-accent if active
-                      )}
-                    >
-                      <div className="flex items-center justify-start mt-1 w-full">
-                        <div className="flex items-center gap-5 w-full">
-                          <Icon color="#e60505" className="h-4 w-4" />
-                          <span className="py-1 text-md font-medium hover:text-emerald-500">{module.title || `Module ${index + 1}`}</span>
-                        </div>
-                        {isCompleted && <CheckCircle className="h-4 w-4 text-green-500" />}
-                      </div>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ) : (
-            <div className="p-4 text-sm text-muted-foreground">No modules available for this course.</div>
-          )}
-          <SidebarSeparator />
-        </SidebarContent>
-      </Sidebar>
-
-      <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex items-center gap-3">
-            <Link to="/learner">
-              <Button variant="ghost" size="sm" className="cursor-pointer">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Dashboard
-              </Button>
+      <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
+        
+        {/* --- Sidebar Navigation --- */}
+        <Sidebar className="border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <SidebarHeader className="p-4 border-b border-slate-100 dark:border-slate-800">
+            <Link to="/learner" className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 mb-3 transition-colors">
+                <ArrowLeft className="h-4 w-4" /> Back to Dashboard
             </Link>
-            <div className="h-6 w-px bg-border" />
-            <div className="flex items-center gap-2">
-              <Avatar className="h-7 w-7">
-                <AvatarImage
-                  src={course?.instructor?.avatarUrl || "/placeholder.svg?height=40&width=40&query=instructor"}
-                  alt={course?.instructor?.name || "Instructor"}
-                />
-                <AvatarFallback>{course?.createdBy?.fullName?.charAt(0) || "I"}</AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="text-sm font-medium leading-none">{course.title}</div>
-                <div className="text-xs text-muted-foreground">{course.category}</div>
-              </div>
+            <h2 className="font-bold text-lg leading-tight line-clamp-2">{course.title}</h2>
+            <div className="mt-3">
+                <div className="flex justify-between text-xs mb-1.5 font-medium text-slate-500">
+                    <span>{courseDerived.percent}% Complete</span>
+                    <span>{courseDerived.completedCount}/{courseDerived.totalModules}</span>
+                </div>
+                <Progress value={courseDerived.percent} className="h-2 bg-slate-100 dark:bg-slate-800" indicatorClassName="bg-emerald-500" />
             </div>
-          </div>
-          <div className="ml-auto">
-            <Badge variant="outline">{courseDerived.percent}% Complete</Badge>
-          </div>
-        </header>
+          </SidebarHeader>
 
-        <main className="flex-1 p-4">
-          {!selectedModule ? (
-            <div className="grid place-items-center h-[70vh]">
-              <div className="text-center max-w-md">
-                <BookOpen className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                <h2 className="text-xl font-semibold mb-1">Select a Module</h2>
-                <p className="text-sm text-muted-foreground">Choose a lesson or resource from the sidebar to view its details here.</p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid gap-4 lg:grid-cols-3">
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        {/* resource icons
-                        {selectedModule.resources?.map((res, idx) => {
-                          const ResIcon =
-                            res.fileType && fileTypeIcons[res.fileType.toLowerCase()]
-                              ? fileTypeIcons[res.fileType.toLowerCase()]
-                              : FileArchive;
-                          return <ResIcon color="#e60505" key={idx} className="h-5 w-5 text-muted-foreground" />;
-                        })} */}
-                        <span className="text-2xl">{selectedModule?.title}</span>
-                      </CardTitle>
-                      <CardDescription className="text-sm">{selectedModule.description}</CardDescription>
-                    </div>
-                    {isSelectedModuleCompleted && (
-                      <Badge variant="secondary" className="gap-1">
-                        <CheckCircle className="h-3.5 w-3.5" />
-                        Completed
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  {/* --- Video area: embed if any video URL present --- */}
-                  {(() => {
-                    const videoUrls = getModuleVideoUrls(selectedModule).filter((u) => isYouTubeUrl(u) || isVimeoUrl(u) || isDirectVideo(u));
-                    if (videoUrls.length === 0) return null;
-
-                    // choose selected video (fallback to first)
-                    const selectedVideo = selectedVideoByModule[selectedModuleIndex] || videoUrls[0];
-
-                    // render embed for youtube or vimeo, or <video> for direct links
-                    return (
-                      <div className="space-y-3">
-                        <div className="w-full rounded overflow-hidden bg-black/5">
-                          {isYouTubeUrl(selectedVideo) ? (
-                            <div className="relative" style={{ paddingTop: "56.25%" }}>
-                              <iframe
-                                title="video-player"
-                                src={getYouTubeEmbed(selectedVideo)}
-                                className="absolute top-0 left-0 w-full h-full"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                              />
-                            </div>
-                          ) : isVimeoUrl(selectedVideo) ? (
-                            <div className="relative" style={{ paddingTop: "56.25%" }}>
-                              <iframe
-                                title="vimeo-player"
-                                src={getVimeoEmbed(selectedVideo)}
-                                className="absolute top-0 left-0 w-full h-full"
-                                frameBorder="0"
-                                allow="autoplay; fullscreen; picture-in-picture"
-                                allowFullScreen
-                              />
-                            </div>
-                          ) : isDirectVideo(selectedVideo) ? (
-                            <video controls className="w-full max-h-[480px] object-contain bg-black">
-                              <source src={selectedVideo} />
-                              Your browser does not support the video tag.
-                            </video>
-                          ) : null}
-                        </div>
-
-                        {/* thumbnails / small selection list */}
-                        <div className="flex gap-2 overflow-x-auto py-2">
-                          {videoUrls.map((vUrl, vi) => {
-                            const thumb = isYouTubeUrl(vUrl) ? getYouTubeThumbnail(vUrl) : null;
-                            return (
-                              <button
-                                key={`vid-${vi}`}
-                                onClick={() => selectModuleVideo(selectedModuleIndex, vUrl)}
-                                className={`flex-shrink-0 rounded overflow-hidden border ${selectedVideoByModule[selectedModuleIndex] === vUrl || (!selectedVideoByModule[selectedModuleIndex] && vi === 0) ? "ring-2 ring-blue-400" : "border-transparent"}`}
-                                style={{ width: 160 }}
-                              >
-                                {thumb ? (
-                                  <img src={thumb} alt="thumb" className="w-full h-24 object-cover" />
-                                ) : (
-                                  <div className="w-full h-24 bg-muted grid place-items-center text-sm">Play</div>
-                                )}
-                                <div className="text-xs p-1 truncate">{vUrl}</div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {/* --- Documents / Resources list --- */}
-                  <div className="rounded-lg border bg-muted/40 p-2">
-                    {selectedModule.resources?.length > 0 ? (
-                      selectedModule.resources.map((res, idx) => {
-                        const ResIcon =
-                          res.fileType && fileTypeIcons[res.fileType.toLowerCase()]
-                            ? fileTypeIcons[res.fileType.toLowerCase()]
-                            : FileArchive;
-
+          <SidebarContent className="p-2">
+            <SidebarGroup>
+                <SidebarGroupLabel>Course Modules</SidebarGroupLabel>
+                <SidebarGroupContent className="space-y-1">
+                    {course.content.map((module, index) => {
+                        const isCompleted = completedModules.includes(module._id);
+                        const isActive = selectedModuleIndex === index;
+                        
                         return (
-                          <div key={res._id || idx} className="flex items-center gap-3 p-2 hover:bg-accent/50 rounded-md">
-                            <ResIcon color="#e60505" className="h-5 w-5 text-muted-foreground" />
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{idx + 1}.  {res.fileName || res.fileUrl}</div>
-                              <div className="text-xs text-muted-foreground truncate">{res.description}</div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <a href={res.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm underline">Open</a>
-
-                              <Button size="sm" variant="outline" onClick={() => openAiForDocument(res._id)}>
-                                🧠 Ask AI
-                              </Button>
-                            </div>
-                          </div>
+                            <SidebarMenuButton
+                                key={module._id}
+                                isActive={isActive}
+                                onClick={() => setSelectedModuleIndex(index)}
+                                className={cn(
+                                    "w-full justify-start h-auto py-3 px-3 transition-all duration-200 rounded-lg border border-transparent",
+                                    isActive 
+                                        ? "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800 text-blue-700 dark:text-blue-300 shadow-sm" 
+                                        : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                )}
+                            >
+                                <div className="flex items-start gap-3 w-full">
+                                    <div className="mt-0.5 shrink-0">
+                                        {isCompleted ? (
+                                            <CheckCircle className="h-5 w-5 text-emerald-500 fill-emerald-50" />
+                                        ) : isActive ? (
+                                            <PlayCircle className="h-5 w-5 text-blue-500 fill-blue-50" />
+                                        ) : (
+                                            <Circle className="h-5 w-5 text-slate-300" />
+                                        )}
+                                    </div>
+                                    <div className="flex-1 text-left">
+                                        <span className={cn("text-sm font-medium block leading-snug", isActive && "font-semibold")}>
+                                            {module.title}
+                                        </span>
+                                        <span className="text-xs text-slate-400 block mt-1 line-clamp-1">
+                                            {module.duration || "10m"} {"Hours"}
+                                        </span>
+                                    </div>
+                                </div>
+                            </SidebarMenuButton>
                         );
-                      })
-                    ) : (
-                      <div className="text-sm text-muted-foreground p-4">No resources available for this module.</div>
-                    )}
-                  </div>
+                    })}
+                </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarRail />
+        </Sidebar>
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      onClick={() => toggleComplete(selectedModule._id)}
-                      className="cursor-pointer"
-                      disabled={selectedModule.locked}
-                      variant={isSelectedModuleCompleted ? "secondary" : "default"}
+        {/* --- Main Content Area --- */}
+        <SidebarInset className="flex-1 flex flex-col h-full overflow-hidden bg-white dark:bg-slate-950">
+            {/* Top Navigation Bar */}
+            <header className="h-14 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between px-6 shrink-0 bg-white dark:bg-slate-900 z-10">
+                <div className="flex items-center gap-3">
+                    <SidebarTrigger />
+                    <Separator orientation="vertical" className="h-5" />
+                    <h3 className="text-sm font-medium text-slate-600 dark:text-slate-300 truncate max-w-md">
+                        {selectedModule?.title}
+                    </h3>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Button 
+                        size="sm" 
+                        variant={isSelectedModuleCompleted ? "outline" : "default"}
+                        className={cn(
+                            "gap-2 transition-all",
+                            !isSelectedModuleCompleted ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                        )}
+                        onClick={() => toggleComplete(selectedModule._id)}
                     >
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      {isSelectedModuleCompleted ? "Mark as Incomplete" : "Mark as Complete"}
+                        {isSelectedModuleCompleted ? <CheckCircle className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
+                        {isSelectedModuleCompleted ? "Completed" : "Mark Complete"}
                     </Button>
+                </div>
+            </header>
 
-                    {selectedModule.locked && <Badge variant="outline">Locked</Badge>}
-                    {isSelectedModuleCompleted && (
-                      <Badge variant="secondary" className="gap-2">
-                        <CheckCircle className="h-3.5 w-3.5" /> Completed
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto no-scrollbar">
+                <div className="max-w-5xl mx-auto p-6 space-y-8">
+                    
+                    {/* Video Player Section */}
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={selectedModule?._id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                            className="w-full"
+                        >
+                            {(() => {
+                                const videoUrls = getModuleVideoUrls(selectedModule).filter((u) => isYouTubeUrl(u) || isVimeoUrl(u) || isDirectVideo(u));
+                                const selectedVideo = selectedVideoByModule[selectedModuleIndex] || videoUrls[0];
 
-              <Card className="lg:col-span-1">
-                <CardHeader>
-                  <CardTitle>Path Details</CardTitle>
-                  <CardDescription>Uploaded {course.createdAt?.split?.("T")?.[0]}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <div className="text-sm font-medium mb-1">Description</div>
-                    <p className="text-sm text-muted-foreground">{selectedModule.description}</p>
-                  </div>
-                  <Separator />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button variant="primary" onClick={() => window.history.back()} className="cursor-pointer">
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back
-                    </Button>
-                    {/* <Button
-                      variant="outline"
-                      onClick={() => {
-                        const fileUrl = selectedModule.resources?.[0]?.fileUrl;
-                        if (!fileUrl) return;
-                        const downloadUrl = fileUrl.replace("/upload/", "/upload/fl_attachment/");
-                        window.open(downloadUrl, "_blank");
-                      }}
-                      className="cursor-pointer"
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download
-                    </Button> */}
-                  </div>
-                </CardContent>
-              </Card>
+                                if (!selectedVideo) {
+                                    return (
+                                        <div className="aspect-video w-full rounded-2xl bg-slate-100 dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-slate-400">
+                                            <FileVideo className="h-16 w-16 mb-4 opacity-50" />
+                                            <p>No video content available for this module.</p>
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div className="space-y-4">
+                                        <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-2xl ring-1 ring-slate-900/10">
+                                            {/* KEY ADDED HERE: Forces React to re-mount the iframe when selectedVideo changes */}
+                                            {isYouTubeUrl(selectedVideo) ? (
+                                                <iframe 
+                                                    key={selectedVideo}
+                                                    title="yt" 
+                                                    src={getYouTubeEmbed(selectedVideo)} 
+                                                    className="absolute inset-0 w-full h-full" 
+                                                    allowFullScreen 
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                />
+                                            ) : isVimeoUrl(selectedVideo) ? (
+                                                <iframe 
+                                                    key={selectedVideo}
+                                                    title="vimeo" 
+                                                    src={getVimeoEmbed(selectedVideo)} 
+                                                    className="absolute inset-0 w-full h-full" 
+                                                    allowFullScreen 
+                                                />
+                                            ) : (
+                                                <video 
+                                                    key={selectedVideo}
+                                                    controls 
+                                                    className="w-full h-full" 
+                                                    src={selectedVideo} 
+                                                />
+                                            )}
+                                        </div>
+
+                                        {videoUrls.length > 1 && (
+                                            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+                                                {videoUrls.map((url, idx) => {
+                                                    const isActive = selectedVideo === url;
+                                                    return (
+                                                        <button 
+                                                            key={idx}
+                                                            onClick={() => handleVideoSelect(selectedModuleIndex, url)}
+                                                            className={cn(
+                                                                "shrink-0 w-40 aspect-video rounded-lg overflow-hidden border-2 transition-all relative group cursor-pointer",
+                                                                isActive ? "border-blue-500 ring-2 ring-blue-200" : "border-transparent opacity-70 hover:opacity-100"
+                                                            )}
+                                                        >
+                                                            {isYouTubeUrl(url) ? (
+                                                                <img src={getYouTubeThumbnail(url)} className="w-full h-full object-cover" alt="Thumbnail" />
+                                                            ) : (
+                                                                <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                                                                    <PlayCircle className="text-white h-8 w-8" />
+                                                                </div>
+                                                            )}
+                                                            {isActive && <div className="absolute inset-0 bg-blue-500/20" />}
+                                                            {!isActive && <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />}
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
+                        </motion.div>
+                    </AnimatePresence>
+
+                    {/* Content Tabs */}
+                    <Tabs defaultValue="overview" className="w-full">
+                        <TabsList className="bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+                            <TabsTrigger value="overview" className="rounded-lg px-4 py-2">Overview</TabsTrigger>
+                            <TabsTrigger value="resources" className="rounded-lg px-4 py-2">Resources ({selectedModule?.resources?.length || 0})</TabsTrigger>
+                            <TabsTrigger value="notes" className="rounded-lg px-4 py-2">AI Summary</TabsTrigger>
+                        </TabsList>
+
+                        <div className="mt-6 min-h-[200px]">
+                            <TabsContent value="overview" className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                                <div className="prose dark:prose-invert max-w-none">
+                                    <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{selectedModule?.title}</h2>
+                                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">
+                                        {selectedModule?.description || "No description provided for this lesson."}
+                                    </p>
+                                </div>
+                                <div className="flex gap-4 pt-4">
+                                    <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-full border">
+                                        <PlayCircle className="h-4 w-4" />
+                                        {selectedModule?.duration || "N/A"} {"Hours"}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-full border">
+                                        <Globe className="h-4 w-4" />
+                                        {selectedModule?.type || "Lesson"}
+                                    </div>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="resources" className="animate-in fade-in slide-in-from-bottom-2">
+                                {selectedModule?.resources?.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {selectedModule.resources.map((res, idx) => {
+                                            const Icon = res.fileType && fileTypeIcons[res.fileType.toLowerCase()] ? fileTypeIcons[res.fileType.toLowerCase()] : FileText;
+                                            return (
+                                                <Card key={idx} className="group hover:border-blue-200 hover:shadow-md transition-all cursor-pointer bg-white dark:bg-slate-900">
+                                                    <CardContent className="p-4 flex items-center gap-4">
+                                                        <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg group-hover:scale-110 transition-transform">
+                                                            <Icon className="h-6 w-6" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <h4 className="font-medium text-slate-900 dark:text-slate-100 truncate">{res.fileName || "Untitled Resource"}</h4>
+                                                            <p className="text-xs text-slate-500 truncate">{res.description || "Downloadable content"}</p>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => window.open(res.fileUrl, "_blank")}>
+                                                                <Maximize2 className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button 
+                                                                size="sm" 
+                                                                variant="secondary" 
+                                                                className="h-8 text-xs bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200 border"
+                                                                onClick={() => openAiForDocument(res._id)}
+                                                            >
+                                                                <MessageSquare className="h-3 w-3 mr-1.5" /> Ask AI
+                                                            </Button>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 border-2 border-dashed rounded-xl bg-slate-50/50">
+                                        <FileText className="h-10 w-10 mx-auto text-slate-300 mb-2" />
+                                        <p className="text-slate-500">No resources attached to this lesson.</p>
+                                    </div>
+                                )}
+                            </TabsContent>
+
+                            <TabsContent value="notes" className="animate-in fade-in slide-in-from-bottom-2">
+                                <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100">
+                                    <CardContent className="p-6 text-center">
+                                        <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <MessageSquare className="h-6 w-6 text-purple-600" />
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-purple-900 mb-2">AI Study Assistant</h3>
+                                        <p className="text-purple-700/80 mb-6 max-w-md mx-auto">
+                                            Select a document from the <strong>Resources</strong> tab and click "Ask AI" to generate summaries, quizzes, and explanations.
+                                        </p>
+                                        <Button variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50" onClick={() => document.querySelector('[value="resources"]').click()}>
+                                            Go to Resources
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                        </div>
+                    </Tabs>
+                </div>
             </div>
-          )}
-        </main>
+        </SidebarInset>
+      </div>
 
-        {/* --- AI Modal (single global modal) --- */}
-        <Dialog
-  open={aiModalOpen}
-  onOpenChange={(open) => {
-    if (!open) closeAiModal();
-  }}
->
-  <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
-    <DialogHeader>
-      <DialogTitle>AI Explanation</DialogTitle>
-      <DialogDescription>
-        The AI will read the selected document and provide a simplified explanation.
-      </DialogDescription>
-    </DialogHeader>
+      {/* --- AI Modal --- */}
+      <Dialog open={aiModalOpen} onOpenChange={setAiModalOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+                <span className="text-2xl">✨</span> AI Insight
+            </DialogTitle>
+            <DialogDescription>
+              Analysis generated from your selected document.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[60vh] mt-2">
+            {aiLoading ? (
+                <div className="py-12 flex flex-col items-center gap-3 text-slate-500">
+                    <Loader className="h-8 w-8 animate-spin text-purple-600" />
+                    <p className="text-sm animate-pulse">Analyzing document content...</p>
+                </div>
+            ) : (
+                <div className="prose prose-sm dark:prose-invert max-w-none bg-slate-50 dark:bg-slate-900 p-4 rounded-lg">
+                    {aiSummary}
+                </div>
+            )}
+          </ScrollArea>
 
-    {/* Scrollable Summary Container */}
-    <div className="min-h-[120px] max-h-[60vh] overflow-y-auto rounded-md border p-3">
-      {aiLoading ? (
-        <div className="flex items-center justify-center py-10">
-          <Loader />
-        </div>
-      ) : (
-        <div className="prose max-w-none whitespace-pre-wrap">
-          {aiSummary ||
-            "No summary available yet. Click Ask AI on any document to generate a summary."}
-        </div>
-      )}
-    </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAiModalOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-    <DialogFooter>
-      <Button variant="outline" onClick={closeAiModal}>
-        Close
-      </Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
-
-
-        <Toaster />
-      </SidebarInset>
+      <Toaster />
     </SidebarProvider>
   );
 }

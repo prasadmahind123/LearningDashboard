@@ -1,11 +1,10 @@
+"use client"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { BookOpen, Search, Bell, Settings, LogOut, ArrowLeft } from "lucide-react"
-import { useAppContext } from "../context/AppContext.jsx";
-
-
+import { useAppContext } from "@/context/AppContext"
 
 export default function AdminHeader({ searchQuery, setSearchQuery }) {
     const { navigate, setUserRole } = useAppContext();

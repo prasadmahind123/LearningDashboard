@@ -1,47 +1,53 @@
 // prasadmahind123/learningdashboard/LearningDashboard-e45f05146a782b48485168fb39580fcf72aca81e/client/src/learnerDash/Dashboard.jsx
 
-import { useEffect, useState  } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import {
   BookOpen,
   Clock,
-  Trophy,
-  TrendingUp,
+  Target,
   Play,
-  Calendar,
   Send,
   Bot,
   X,
   Eye,
-  Star,
-  CheckCircle,
-  AlertCircle,
-  Target,
   Award,
-  BarChart3,
+  Sparkles,
+  Zap
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppContext } from "../context/AppContext.jsx"
 import { Link } from "react-router-dom"
+import { motion, AnimatePresence } from "framer-motion"
 
+// Animation Variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
+};
 
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } }
+};
 
-const recentActivity = [
-  { action: "Completed lesson", course: "Web Development", time: "2 hours ago", type: "lesson" },
-  { action: "Started new course", course: "Data Science", time: "1 day ago", type: "enrollment" },
-  { action: "Earned certificate", course: "Digital Marketing", time: "3 days ago", type: "certificate" },
-  { action: "Joined discussion", course: "Web Development", time: "5 days ago", type: "discussion" },
-  { action: "Submitted assignment", course: "Data Science", time: "1 week ago", type: "assignment" },
-  { action: "Passed quiz", course: "Web Development", time: "1 week ago", type: "quiz" },
-]
-  
+const chatVariants = {
+  hidden: { opacity: 0, scale: 0.8, y: 20 },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 120 } },
+  exit: { opacity: 0, scale: 0.8, y: 20 }
+};
+
 export default function Dashboard() {
-  const { learner , paths } = useAppContext();
+  const { learner, paths } = useAppContext();
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatMessages, setChatMessages] = useState([
     {
@@ -55,7 +61,16 @@ export default function Dashboard() {
   const [chatInput, setChatInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [selectedcourse, setSelectedcourse] = useState(null)
-  const [learnerPaths, setLearnerPaths] = useState(learner?.enrolledPaths || []); // paths enrolled by logged-in learner
+  const [learnerPaths, setLearnerPaths] = useState(learner?.enrolledPaths || []);
+
+  // Auto-scroll for chat
+  const chatEndRef = useRef(null);
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages, isTyping]);
 
   useEffect(() => {
     if (!learner?.enrolledPaths?.length || !paths?.length) {
@@ -63,23 +78,19 @@ export default function Dashboard() {
        return;
     }
 
-    // Map enrolledPaths to their actual path objects and include enrollment info
     const mapped = learner.enrolledPaths
       .map((enroll) => {
         const pathObj = paths.find((p) => p._id === enroll.pathId);
         if (!pathObj) return null;
         return {
           ...pathObj,
-          enrollment: enroll, // attach enrollment info
+          enrollment: enroll,
         };
       })
       .filter(Boolean);
 
     setLearnerPaths(mapped);
   }, [paths, learner]);
-
-
-
 
   const handleChatSubmit = async (e) => {
     e.preventDefault()
@@ -96,7 +107,6 @@ export default function Dashboard() {
     setChatInput("")
     setIsTyping(true)
 
-    // Simulate AI response (replace with actual AI integration)
     setTimeout(() => {
       const botResponse = generateBotResponse(chatInput)
       const botMessage = {
@@ -148,727 +158,324 @@ export default function Dashboard() {
     return "I understand you're asking about our learning platform. I can help with course navigation, progress tracking, certificates, study tips, and platform features. Could you be more specific about what you'd like to know?"
   }
 
- 
-  // --- UPDATED STATS CALCULATION ---
-  const hoursLearned = learner?.totalLearningHours || 0; // Use totalLearningHours from schema
-  const certificatesEarned = learner?.analytics?.certificatesEarned || 0; // Use analytics if available, or default to 0
-  
-  const totalProgressSum = learnerPaths.reduce((total, course) => total + (course.enrollment?.progressPercent || 0), 0);
-  const averageProgress = learnerPaths.length > 0
-    ? Math.round(totalProgressSum / learnerPaths.length)
-    : 0;
-
+  const hoursLearned = learner?.totalLearningHours || 0; 
   const eligibleCertificates = learnerPaths.filter(
     (c) => (c.enrollment?.progressPercent || 0) >= 90
   ).length;
 
-
   return (
-    <div className="no-scrollbar flex-1 h-[95vh] overflow-y-scroll flex flex-col justify-between">
-      <main className="flex-1 p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome back, {learner?.name || "Learner"}</h1>
-          <p className="text-muted-foreground">{learner?.email && (<span>{learner.email} • </span>)}Continue your learning journey</p>
+    <div className="no-scrollbar flex-1 h-[95vh] overflow-y-scroll flex flex-col bg-slate-50/50 dark:bg-slate-950">
+      <motion.main 
+        className="flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Header Section with Gradient Text */}
+        <motion.div className="mb-10" variants={itemVariants}>
+          <h1 className="text-4xl font-extrabold mb-2 tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Welcome back, {learner?.name || "Learner"} <motion.span animate={{ rotate: [0, 14, -8, 14, -4, 10, 0, 0] }} transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1 }} className="inline-block origin-bottom-right">👋</motion.span>
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            {learner?.email && (<span>{learner.email} • </span>)}
+            Let's reach your goals today.
+          </p>
           {learner?.createdAt && (
-            <p className="text-xs text-muted-foreground">Joined: {learner.createdAt.split("T")[0]}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Member since: {learner.createdAt.split("T")[0]}
+            </p>
           )}
-        </div>
+        </motion.div>
 
         {/* Enhanced Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total learning paths</CardTitle>
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{learnerPaths.length || 0}</div> {/* Use learnerPaths.length */}
-              <p className="text-xs text-muted-foreground">{eligibleCertificates} near completion</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-10">
+          <motion.div variants={itemVariants} whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+            <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                 <BookOpen className="h-24 w-24 text-blue-500 transform rotate-12 translate-x-4 -translate-y-4" />
+              </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-blue-600">Total Learning Paths</CardTitle>
+                <div className="p-2 bg-blue-100 rounded-full dark:bg-blue-900/30">
+                    <BookOpen className="h-4 w-4 text-blue-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-slate-800 dark:text-slate-100">{learnerPaths.length || 0}</div>
+                <p className="text-xs text-muted-foreground mt-1 font-medium flex items-center">
+                    {eligibleCertificates > 0 && <Sparkles className="h-3 w-3 mr-1 text-yellow-500" />}
+                    {eligibleCertificates} near completion
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Hours Learned</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{hoursLearned.toFixed(1)}</div> {/* Display hours learned */}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Certificates</CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{certificatesEarned}</div>
-              <p className="text-xs text-muted-foreground">{eligibleCertificates} eligible</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg. Progress</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{averageProgress}%</div>
-              <p className="text-xs text-muted-foreground">Across all enrolled paths</p>
-            </CardContent>
-          </Card>
+          <motion.div variants={itemVariants} whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+            <Card className="border-l-4 border-l-purple-500 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                 <Clock className="h-24 w-24 text-purple-500 transform -rotate-12 translate-x-4 -translate-y-4" />
+              </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-purple-600">Hours Invested</CardTitle>
+                <div className="p-2 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                    <Clock className="h-4 w-4 text-purple-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-slate-800 dark:text-slate-100">{hoursLearned.toFixed(1)}</div>
+                <p className="text-xs text-muted-foreground mt-1">Keep the streak alive!</p>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Enhanced Enrolled courses */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>My learning paths</CardTitle>
-                  <CardDescription>Continue where you left off</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {learnerPaths.map((course) => (
-                    <div
-                      key={course._id} // Use _id from the path object
-                      className="flex items-center space-x-4 p-4 border rounded-lg hover:shadow-md transition-shadow"
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Main Content: Learning Paths */}
+          <motion.div className="lg:col-span-2 space-y-6" variants={itemVariants}>
+            <Card className="shadow-md border-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-amber-500" /> 
+                    My Learning Paths
+                </CardTitle>
+                <CardDescription>Continue where you left off</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {learnerPaths.length === 0 ? (
+                    <div className="text-center py-10 opacity-50">
+                        <BookOpen className="h-12 w-12 mx-auto mb-3" />
+                        <p>No enrolled paths yet.</p>
+                    </div>
+                ) : (
+                    learnerPaths.map((course, index) => (
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        key={course._id} 
+                        className="group flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-4 p-4 border rounded-xl hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100 dark:hover:shadow-blue-900/20 bg-white dark:bg-slate-800 transition-all duration-300"
                     >
-                      <img
-                        src={course.image || "/placeholder.svg"}
-                        alt={course.title}
-                        className="w-20 h-14 object-cover rounded"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="font-semibold truncate">{course.title}</h3>
-                          <Badge variant="outline" className="text-xs">
+                        <div className="relative overflow-hidden rounded-lg w-full md:w-28 h-20 shrink-0">
+                             <img
+                                src={course.image || "/placeholder.svg"}
+                                alt={course.title}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            />
+                            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                        </div>
+
+                        <div className="flex-1 min-w-0 w-full">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <h3 className="font-bold text-lg truncate text-slate-800 dark:text-slate-100">{course.title}</h3>
+                            <Badge variant="secondary" className="text-xs font-normal">
                             {course.level}
-                          </Badge>
-                          {course.enrollment?.progressPercent >= 90 && ( // Use enrollment progress
-                            <Badge className="text-xs bg-green-500">
-                              <Award className="h-3 w-3 mr-1" />
-                              Certificate Ready
                             </Badge>
-                          )}
+                            {course.enrollment?.progressPercent >= 90 && ( 
+                            <Badge className="text-xs bg-green-500 hover:bg-green-600 animate-pulse">
+                                <Award className="h-3 w-3 mr-1" />
+                                Certificate Ready
+                            </Badge>
+                            )}
                         </div>
 
                         <div className="flex items-center space-x-4 mb-2">
-                          <div className="flex-1">
-                            <div className="flex justify-between text-sm mb-1">
-                              <span>
+                            <div className="flex-1">
+                            <div className="flex justify-between text-xs mb-1.5 font-medium text-muted-foreground">
+                                <span>
                                 {course.content?.length || 0} modules
-                              </span>
-                              <span>{course.enrollment?.progressPercent.toFixed(0) || 0}%</span> {/* Use enrollment progress */}
+                                </span>
+                                <span>{course.enrollment?.progressPercent.toFixed(0) || 0}% Complete</span> 
                             </div>
-                            <Progress value={course.enrollment?.progressPercent || 0} className="h-2" />
-                          </div>
+                            <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <motion.div 
+                                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-600"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${course.enrollment?.progressPercent || 0}%` }}
+                                    transition={{ duration: 1, delay: 0.5 }}
+                                />
+                            </div>
+                            </div>
                         </div>
-                      </div>
-                      <div className="text-right space-y-2">
-                        <div className="flex space-x-2">
-                          <Link to={`/courses/learning-path/${course._id}`}>
-                            <Button size="sm"  className = "bg-blue-500 hover:bg-blue-400 cursor-pointer" onClick={() => setSelectedcourse(course)}>
-                              <Eye className="h-3 w-3 mr-1 cursor-pointer" />
-                              Details
+                        </div>
+
+                        <div className="flex md:flex-col gap-2 w-full md:w-auto mt-2 md:mt-0">
+                        <Link to={`/courses/learning-path/${course._id}`} className="flex-1">
+                            <Button size="sm" variant="ghost" className="w-full justify-start md:justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => setSelectedcourse(course)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            Details
                             </Button>
-                          </Link>
-                          
-                          <Link to={`/mycourses/${course._id}`}>
-                             <Button size="sm" variant="outline" className = "cursor-pointer">
-                                <Play className="h-3 w-3 mr-1 cursor-pointer" />
+                        </Link>
+                        
+                        <Link to={`/mycourses/${course._id}`} className="flex-1">
+                            <Button size="sm" className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 shadow-md transition-transform active:scale-95">
+                                <Play className="h-3 w-3 mr-2 fill-current" />
                                 Continue
-                              </Button>
-                          </Link>
-                         
+                            </Button>
+                        </Link>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
+                    </motion.div>
+                    ))
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
-            {/* Enhanced Sidebar (simplified placeholder content) */}
-            <div className="space-y-6">
-              {/* Study Goals */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Target className="h-5 w-5 mr-2" />
-                    Weekly Goals
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                   <p className="text-muted-foreground">Goal tracking logic not implemented yet in backend.</p>
-                   {/* Placeholder loop using first two enrolled paths */}
-                  {learnerPaths.slice(0, 2).map((course) => (
+          {/* Sidebar: Weekly Goals */}
+          <motion.div className="space-y-6" variants={itemVariants}>
+            <Card className="shadow-md border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950">
+              <CardHeader>
+                <CardTitle className="flex items-center text-slate-700 dark:text-slate-200">
+                  <Target className="h-5 w-5 mr-2 text-red-500" />
+                  Weekly Goals
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                 {/* Mock Goal Chart */}
+                 <div className="relative pt-2">
+                    <p className="text-sm text-muted-foreground mb-4">You are making great progress this week!</p>
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                        <span>Progress</span>
+                        <span>4/5 Days</span>
+                    </div>
+                    <Progress value={80} className="h-3 bg-slate-200 dark:bg-slate-800 [&>div]:bg-gradient-to-r [&>div]:from-red-500 [&>div]:to-orange-500" />
+                 </div>
+                 
+                 <div className="space-y-4 pt-4 border-t">
+                    <h4 className="text-sm font-semibold mb-2">Top Priorities</h4>
+                    {learnerPaths.slice(0, 3).map((course) => (
                     <div key={course._id} className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="truncate">{course.title}</span>
-                      </div>
-                      <Progress
-                         value={course.enrollment?.progressPercent || 0}
-                         className="h-2"
-                      />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Recent Activity */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentActivity.slice(0, 5).map((activity, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <div
-                          className={`w-2 h-2 rounded-full mt-2 ${
-                            activity.type === "certificate"
-                              ? "bg-green-500"
-                              : activity.type === "assignment"
-                                ? "bg-blue-500"
-                                : activity.type === "quiz"
-                                  ? "bg-purple-500"
-                                  : "bg-primary"
-                          }`}
-                        ></div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{activity.action}</p>
-                          <p className="text-sm text-muted-foreground">{activity.course}</p>
-                          <p className="text-xs text-muted-foreground">{activity.time}</p>
+                        <div className="flex justify-between text-sm">
+                        <span className="truncate w-2/3">{course.title}</span>
+                        <span className="text-xs text-muted-foreground">{course.enrollment?.progressPercent?.toFixed(0)}%</span>
                         </div>
-                      </div>
+                        <Progress
+                            value={course.enrollment?.progressPercent || 0}
+                            className="h-1.5"
+                        />
+                    </div>
                     ))}
-                  </div>
-                </CardContent>
-              </Card>
+                 </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
 
-              {/* Quick Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Link to="/courses">
-                     <Button variant="outline" className="w-full justify-start bg-transparent cursor-pointer">
-                        <BookOpen className="mr-2 h-4 w-4" />
-                        Browse New learning paths
-                    </Button>
-                  </Link>
-                  
-                  <Button variant="outline" className="w-full justify-start bg-transparent cursor-pointer">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Schedule Study Time
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start bg-transparent cursor-pointer">
-                    <Trophy className="mr-2 h-4 w-4" />
-                    View Certificates
-                  </Button>
-                  <Link to="/learner/progress">
-                      <Button variant="outline" className="w-full justify-start bg-transparent cursor-pointer">
-                        <BarChart3 className="mr-2 h-4 w-4" />
-                        Progress Analytics
-                      </Button>
-                  </Link>
-                  
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Enhanced Detailed course View Dialog (using mock data in dialog for now) */}
-          {selectedcourse && (
-            <Dialog open={!!selectedcourse} onOpenChange={() => setSelectedcourse(null)}>
-              <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto ">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center space-x-3">
-                    <img
-                      src={selectedcourse.image || "/placeholder.svg"}
-                      alt={selectedcourse.title}
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                    <div>
-                      <h3 className="text-xl font-bold">{selectedcourse.title}</h3>
-                      <p className="text-sm text-muted-foreground">by {selectedcourse.instructor}</p>
-                    </div>
-                  </DialogTitle>
-                </DialogHeader>
-
-                <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="grid w-full grid-cols-5">
-                    <TabsTrigger className="cursor-pointer" value="overview">Overview</TabsTrigger>
-                    <TabsTrigger className="cursor-pointer" value="modules">Modules</TabsTrigger>
-                    <TabsTrigger className="cursor-pointer" value="assignments">Assignments</TabsTrigger>
-                    <TabsTrigger className="cursor-pointer" value="quizzes">Quizzes</TabsTrigger>
-                    <TabsTrigger className="cursor-pointer" value="progress">Progress</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="overview" className="space-y-6">
-                    {/* course Overview */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-primary">{selectedcourse.progress}%</div>
-                            <p className="text-sm text-muted-foreground">Progress</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold">{selectedcourse.timeSpent}</div>
-                            <p className="text-sm text-muted-foreground">Time Spent</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold">{selectedcourse.overallGrade}</div>
-                            <p className="text-sm text-muted-foreground">Overall Grade</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold">{selectedcourse.studyStreak}</div>
-                            <p className="text-sm text-muted-foreground">Study Streak</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* course Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>learning paths Information</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Category:</span>
-                            <Badge variant="outline">{selectedcourse.category}</Badge>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Level:</span>
-                            <span className="font-medium">{selectedcourse.level}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Enrolled:</span>
-                            <span className="font-medium">{selectedcourse.enrolledDate}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Last Accessed:</span>
-                            <span className="font-medium">{selectedcourse.lastAccessed}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Rating:</span>
-                            <div className="flex items-center space-x-1">
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                              <span className="font-medium">{selectedcourse.courseRating}</span>
-                            </div>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Students:</span>
-                            <span className="font-medium">{selectedcourse.totalStudents}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Study Plan</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Weekly Goal:</span>
-                            <span className="font-medium">{selectedcourse.studyPlan.weeklyGoal}h</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">This Week:</span>
-                            <span className="font-medium">{selectedcourse.studyPlan.currentWeekHours}h</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Daily Recommended:</span>
-                            <span className="font-medium">{selectedcourse.studyPlan.recommendedDailyTime}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Next Milestone:</span>
-                            <span className="font-medium text-sm">{selectedcourse.studyPlan.nextMilestone}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Est. Completion:</span>
-                            <span className="font-medium">{selectedcourse.studyPlan.estimatedCompletion}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Skills & Description */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>What You'll Learn</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground mb-4">{selectedcourse.description}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedcourse.skills.map((skill, index) => (
-                            <Badge key={index} variant="secondary">
-                              {skill}
-                            </Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  <TabsContent value="modules" className="space-y-4 w-screen">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>learning paths Modules</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {selectedcourse.modules.map((module, index) => (
-                            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                              <div className="flex items-center space-x-3">
-                                <div
-                                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                    module.status === "completed"
-                                      ? "bg-green-100 text-green-600"
-                                      : module.status === "in-progress"
-                                        ? "bg-blue-100 text-blue-600"
-                                        : module.status === "locked"
-                                          ? "bg-gray-100 text-gray-400"
-                                          : "bg-yellow-100 text-yellow-600"
-                                  }`}
-                                >
-                                  {module.status === "completed" ? (
-                                    <CheckCircle className="h-4 w-4" />
-                                  ) : module.status === "locked" ? (
-                                    <AlertCircle className="h-4 w-4" />
-                                  ) : (
-                                    <span className="text-sm font-bold">{index + 1}</span>
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="font-medium">{module.name}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {module.lessons} lessons • {module.duration}
-                                  </p>
-                                  {module.lastAccessed && (
-                                    <p className="text-xs text-muted-foreground">
-                                      Last accessed: {module.lastAccessed}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-3">
-                                {module.grade && (
-                                  <Badge variant="outline" className="bg-green-50">
-                                    {module.grade}
-                                  </Badge>
-                                )}
-                                <div className="flex items-center space-x-2">
-                                  <Progress value={(module.completed / module.lessons) * 100} className="w-20 h-2" />
-                                  <span className="text-sm font-medium">
-                                    {module.completed}/{module.lessons}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  <TabsContent value="assignments" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Assignments</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {selectedcourse.assignments.map((assignment, index) => (
-                            <div key={index} className="p-4 border rounded-lg">
-                              <div className="flex items-center justify-between mb-3">
-                                <div>
-                                  <p className="font-medium">{assignment.name}</p>
-                                  <p className="text-sm text-muted-foreground">Due: {assignment.dueDate}</p>
-                                  {assignment.submittedDate && (
-                                    <p className="text-sm text-muted-foreground">
-                                      Submitted: {assignment.submittedDate}
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  {assignment.grade && (
-                                    <Badge variant="outline" className="bg-green-50">
-                                      {assignment.grade}
-                                    </Badge>
-                                  )}
-                                  <Badge
-                                    variant={
-                                      assignment.status === "completed"
-                                        ? "default"
-                                        : assignment.status === "in-progress"
-                                          ? "secondary"
-                                          : "outline"
-                                    }
-                                  >
-                                    {assignment.status.replace("-", " ")}
-                                  </Badge>
-                                </div>
-                              </div>
-                              {assignment.feedback && (
-                                <div className="mt-3 p-3 bg-muted/50 rounded-md">
-                                  <p className="text-sm font-medium mb-1">Instructor Feedback:</p>
-                                  <p className="text-sm text-muted-foreground">{assignment.feedback}</p>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  <TabsContent value="quizzes" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Quizzes & Tests</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {selectedcourse.quizzes.map((quiz, index) => (
-                            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                              <div>
-                                <p className="font-medium">{quiz.name}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {quiz.attempts > 0 ? `${quiz.attempts} attempt(s)` : "Not attempted"}
-                                </p>
-                              </div>
-                              <div className="flex items-center space-x-3">
-                                {quiz.score > 0 && (
-                                  <div className="text-right">
-                                    <p className="font-medium">
-                                      {quiz.score}/{quiz.maxScore}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {Math.round((quiz.score / quiz.maxScore) * 100)}%
-                                    </p>
-                                  </div>
-                                )}
-                                <Badge
-                                  variant={
-                                    quiz.status === "passed"
-                                      ? "default"
-                                      : quiz.status === "pending"
-                                        ? "secondary"
-                                        : "destructive"
-                                  }
-                                  className={quiz.status === "passed" ? "bg-green-500" : ""}
-                                >
-                                  {quiz.status}
-                                </Badge>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  <TabsContent value="progress" className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Learning Analytics</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span>course Completion</span>
-                              <span>{selectedcourse.progress}%</span>
-                            </div>
-                            <Progress value={selectedcourse.progress} className="h-3" />
-                          </div>
-
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span>Weekly Goal Progress</span>
-                              <span>
-                                {selectedcourse.studyPlan.currentWeekHours}h / {selectedcourse.studyPlan.weeklyGoal}h
-                              </span>
-                            </div>
-                            <Progress
-                              value={
-                                (selectedcourse.studyPlan.currentWeekHours / selectedcourse.studyPlan.weeklyGoal) * 100
-                              }
-                              className="h-3"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4 pt-4">
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-blue-600">{selectedcourse.completedLessons}</div>
-                              <p className="text-sm text-muted-foreground">Lessons Completed</p>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-green-600">
-                                {selectedcourse.assignments.filter((a) => a.status === "completed").length}
-                              </div>
-                              <p className="text-sm text-muted-foreground">Assignments Done</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Performance Metrics</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm">Overall Grade</span>
-                            <Badge variant="outline" className="text-lg font-bold">
-                              {selectedcourse.overallGrade}
-                            </Badge>
-                          </div>
-
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm">Study Streak</span>
-                            <div className="flex items-center space-x-1">
-                              <span className="text-lg font-bold">{selectedcourse.studyStreak}</span>
-                              <span className="text-sm text-muted-foreground">days</span>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm">Quiz Average</span>
-                            <span className="text-lg font-bold">
-                              {Math.round(
-                                selectedcourse.quizzes
-                                  .filter((q) => q.score > 0)
-                                  .reduce((acc, q) => acc + (q.score / q.maxScore) * 100, 0) /
-                                  selectedcourse.quizzes.filter((q) => q.score > 0).length,
-                              )}
-                              %
-                            </span>
-                          </div>
-
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm">Time Investment</span>
-                            <span className="text-lg font-bold">{selectedcourse.timeSpent}</span>
-                          </div>
-
-                          {selectedcourse.certificateEligible && (
-                            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                              <div className="flex items-center space-x-2">
-                                <Award className="h-5 w-5 text-green-600" />
-                                <span className="text-sm font-medium text-green-800">Certificate Ready!</span>
-                              </div>
-                              <p className="text-sm text-green-600 mt-1">
-                                You're eligible to receive your completion certificate.
-                              </p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </DialogContent>
-            </Dialog>
-          )}
-
-          {/* AI Chatbot */}
-          <div className="fixed bottom-4 right-4 z-50">
-            {!isChatOpen && (
-              <Button
-                onClick={() => setIsChatOpen(true)}
-                className="bg-blue-500 hover:bg-blue-400 cursor-pointer rounded-full w-14 h-14 shadow-lg hover:shadow-xl transition-shadow"
-              >
-                <Bot className="h-6 w-6" />
-              </Button>
-            )}
-
+        {/* Floating AI Chatbot */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <AnimatePresence>
             {isChatOpen && (
-              <Card className="w-80 h-96 shadow-xl">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2  text-primary-foreground rounded-t-lg bg-blue-500 hover:bg-blue-400">
-                  <div className="flex items-center space-x-2">
-                    <Bot className="h-5 w-5" />
-                    <CardTitle className="text-sm ">EduBot - Learning Assistant</CardTitle>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsChatOpen(false)}
-                    className="text-primary-foreground hover:bg-primary-foreground/20"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </CardHeader>
-                <CardContent className="p-0 flex flex-col h-80">
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3 ">
+              <motion.div
+                variants={chatVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="absolute bottom-16 right-0 w-80 md:w-96 shadow-2xl rounded-2xl overflow-hidden border border-white/20"
+              >
+                <Card className="h-[500px] flex flex-col border-0 backdrop-blur-xl bg-white/90 dark:bg-slate-900/90">
+                  <CardHeader className="flex flex-row items-center justify-between py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                    <div className="flex items-center space-x-2">
+                      <div className="bg-white/20 p-1.5 rounded-full">
+                        <Bot className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm font-bold">EduBot AI</CardTitle>
+                        <p className="text-[10px] text-blue-100 font-medium opacity-90 flex items-center">
+                            <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1 animate-pulse"></span>
+                            Online
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsChatOpen(false)}
+                      className="text-white hover:bg-white/20 h-8 w-8 rounded-full"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  
+                  <CardContent className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50 dark:bg-slate-950/50">
                     {chatMessages.map((message) => (
-                      <div
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
                         key={message.id}
                         className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[80%] p-3 rounded-lg text-sm ${
-                            message.type === "user" ? " text-primary-foreground bg-blue-500 hover:bg-blue-400" : "bg-muted"
+                          className={`max-w-[85%] p-3.5 rounded-2xl text-sm shadow-sm ${
+                            message.type === "user" 
+                              ? "text-white bg-blue-600 rounded-br-none" 
+                              : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-bl-none border border-slate-100 dark:border-slate-700"
                           }`}
                         >
-                          <p>{message.message}</p>
-                          <p className="text-xs opacity-70 mt-1">{message.timestamp}</p>
+                          <p className="leading-relaxed">{message.message}</p>
+                          <p className={`text-[10px] mt-1.5 text-right ${message.type === 'user' ? 'text-blue-100' : 'text-slate-400'}`}>{message.timestamp}</p>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
+                    
                     {isTyping && (
-                      <div className="flex justify-start">
-                        <div className="bg-muted p-3 rounded-lg text-sm">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                            <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "0.1s" }}
-                            ></div>
-                            <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "0.2s" }}
-                            ></div>
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-bl-none border border-slate-100 dark:border-slate-700 shadow-sm">
+                          <div className="flex space-x-1.5 items-center h-4">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     )}
-                  </div>
-                  <div className="border-t p-3">
-                    <form onSubmit={handleChatSubmit} className="flex space-x-2">
+                    <div ref={chatEndRef} />
+                  </CardContent>
+
+                  <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+                    <form onSubmit={handleChatSubmit} className="flex gap-2 relative">
                       <Input
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
-                        placeholder="Ask me about courses, progress, or platform features..."
-                        className="flex-1 text-sm mb-6"
+                        placeholder="Type your question..."
+                        className="flex-1 pr-10 rounded-full border-slate-200 dark:border-slate-700 focus-visible:ring-blue-500 bg-slate-50 dark:bg-slate-800"
                       />
-                      <Button  type="submit" size="sm" disabled={!chatInput.trim()} className={`bg-blue-500 hover:bg-blue-400 cursor-pointer {!chatInput.trim() ? "opacity-50 cursor-not-allowed" : ""}`}>
-                        <Send className="h-4 w-4" />
+                      <Button 
+                        type="submit" 
+                        size="icon" 
+                        disabled={!chatInput.trim()} 
+                        className={`rounded-full absolute right-1 top-1 h-8 w-8 transition-all ${!chatInput.trim() ? "opacity-0 scale-75" : "bg-blue-600 hover:bg-blue-500 opacity-100 scale-100"}`}
+                      >
+                        <Send className="h-3.5 w-3.5" />
                       </Button>
                     </form>
                   </div>
-                </CardContent>
-              </Card>
+                </Card>
+              </motion.div>
             )}
-          </div>
-        </main>
+          </AnimatePresence>
+
+          {!isChatOpen && (
+            <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+            >
+                <Button
+                    onClick={() => setIsChatOpen(true)}
+                    className="h-16 w-16 rounded-full shadow-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white flex items-center justify-center relative overflow-hidden group"
+                >
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 rounded-full" />
+                    <Bot className="h-8 w-8 relative z-10" />
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white"></span>
+                    </span>
+                </Button>
+            </motion.div>
+          )}
+        </div>
+      </motion.main>
     </div>
   )
 }

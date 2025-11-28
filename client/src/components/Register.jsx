@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { BookOpen, Eye, EyeOff } from "lucide-react"
 import { useAppContext } from "../context/AppContext.jsx"
+import toast,{Toaster} from "react-hot-toast"
 
 
 export default function Register() {
@@ -35,15 +36,15 @@ export default function Register() {
   const handleSignUp = async(e) => {
     try{
       e.preventDefault()
-      const { fullName, email, password, confirmPassword, agreeToTerms } = formData
+      const { password, confirmPassword, agreeToTerms } = formData
 
       if (password !== confirmPassword) {
-        alert("Passwords do not match")
+        toast.error("Passwords do not match")
         return
       }
 
       if (!agreeToTerms) {
-        alert("You must agree to the terms and conditions")
+        toast.error("You must agree to the terms and conditions")
         return
       }
       const form = new FormData();
@@ -53,7 +54,7 @@ export default function Register() {
       if (userType === "teacher") {
         form.append("qualification", formData.qualifications);
         form.append("institute", formData.institute);
-        form.append("certificateFile", certificateFiles[0]); // Assuming single file upload
+        form.append("certificateFile", certificateFiles[0]);
         form.append("expertise", formData.expertise);
       }
       
@@ -71,11 +72,11 @@ export default function Register() {
       if (userType === "learner") navigate("/learner");
       else if (userType === "teacher") navigate("/login");
     } else {
-      alert("Login failed.");
+      toast.error(data.message || "Registration failed");
     }
     } catch (error) {
       console.error("Sign up error:", error);
-      alert("An error occurred while signing up. Please try again.");
+      toast.error(error.response?.data?.message || "An error occurred during sign up");
     }
   }
 
@@ -258,6 +259,7 @@ export default function Register() {
           </p>
         </CardFooter>
       </Card>
+      <Toaster/>
     </div>
   )
 }

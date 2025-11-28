@@ -11,7 +11,7 @@ import { StickyScroll } from '@/components/ui/sticky-scroll-reveal'
 import { motion } from "motion/react";
 import AnimatedStatsCards from '@/components/AnimatedCaed'
 import FadeInSection from '@/components/FadeInSection'
-import  LayoutGridDemo  from '@/components/LayoutGrid'
+// import  LayoutGridDemo  from '@/components/LayoutGrid'
 import { MovingCards } from '@/components/MovingCards'
 
 
@@ -105,16 +105,16 @@ export default function Home() {
   return (
     <div>
       <AuroraBackground>
-      <motion.div
-        initial={{ opacity: 0.0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{
-          delay: 0.3,
-          duration: 0.8,
-          ease: "easeInOut",
-        }}
-        className="relative flex flex-col gap-4 items-center justify-center px-4"
-      ></motion.div>
+        <motion.div
+          initial={{ opacity: 0.0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: 0.3,
+            duration: 0.8,
+            ease: "easeInOut",
+          }}
+          className="relative flex flex-col gap-4 items-center justify-center px-4"
+        ></motion.div>
       <div className='flex'>
         <div className="container mx-auto max-w-4xl text-center flex flex-col justify-center items-center min-h-screen relative">
           <h1 className="text-3xl md:text-7xl font-bold dark:text-white text-center">Learn Without Limits</h1>
@@ -150,7 +150,7 @@ export default function Home() {
 
       </div>
         
-      </AuroraBackground>
+    </AuroraBackground>
 
       <FadeInSection>
         <section className="h-screen flex items-center justify-center w-full flex-col p-4"  >
@@ -160,11 +160,11 @@ export default function Home() {
         </section>
       </FadeInSection>
       
-      <FadeInSection>
+      {/* <FadeInSection>
         <section className="h-screen flex items-center justify-center w-full flex-col p-4">
         <LayoutGridDemo/>
         </section>
-      </FadeInSection>
+      </FadeInSection> */}
       <FadeInSection>
           <MovingCards></MovingCards>
       </FadeInSection>

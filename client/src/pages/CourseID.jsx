@@ -280,7 +280,7 @@ export default function CourseID() {
                     <div>
                       <Star className="inline h-4 w-4 text-yellow-400" /> 4.8 Rating
                     </div>
-                    <div>{path.learners?.length || 0} Students</div>
+                    <div>{path.createdBy?.enrolledStudents?.length || 0} Students</div>
                     <div>{path.createdBy?.createdPaths?.length || 0} Courses</div>
                     <div className="flex items-center gap-1">
                       <Award className="h-4 w-4 text-blue-500" /> Expert
