@@ -94,7 +94,11 @@ export const loginTeacher = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid password" });
     }
 
-    sendTeacherToken(teacher, res);
+    if(teacher.status === "approved"){
+      sendTeacherToken(teacher, res);
+    }
+
+    
 
     return res.json({
       success: true,
