@@ -24,13 +24,13 @@ const port = process.env.PORT || 3000;
 await connectDB(); // Ensure the database connection is established before starting the server
 await connectCloudinary(); // Connect to Cloudinary for image uploads
 
-const allowedOrigins = ['http://localhost:5173']
+const allowedOrigins = ['http://localhost:5173' , 'https://learning-dashboard-two.vercel.app/']
 
 // Middleware to parse JSON bodies
 app.use(express.json());
 app.use(cookieParser()); // Middleware to parse cookies
 app.use(cors({
-  origin: ["http://localhost:5173"],  // your React frontend
+  origin: allowedOrigins,  // your React frontend
   credentials: true,                // allow cookies
 }));// Middleware for session management
 app.use(session({
