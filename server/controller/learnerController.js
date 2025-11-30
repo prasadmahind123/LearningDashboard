@@ -32,10 +32,10 @@ export const registerLearner = async (req, res) => {
         });
 
         const token = jwt.sign(
-            { id: Learner._id, role: "learner" },
+            { id: newLearner._id, role: "learner" }, 
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
-            );
+        );
 
             res.cookie("learnerToken", token, {
             httpOnly: true,
@@ -79,8 +79,10 @@ export const loginLearner = async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ id: learner._id }, process.env.JWT_SECRET, {
-            expiresIn: '30d'
+        const token = jwt.sign(
+          { id: learner._id }, 
+          process.env.JWT_SECRET, 
+          { expiresIn: '30d'
         });
 
         res.cookie("learnerToken", token, {
