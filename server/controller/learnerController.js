@@ -40,7 +40,7 @@ export const registerLearner = async (req, res) => {
             res.cookie("learnerToken", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: 'production' ? 'none' : 'strict',
+            sameSite:  'none' ,
             
         });
 
@@ -87,7 +87,7 @@ export const loginLearner = async (req, res) => {
 
         res.cookie("learnerToken", token, {
         httpOnly: true,
-        sameSite: "lax",   // ✅ or 'none' + secure:true if using HTTPS
+        sameSite: "none",   // ✅ or 'none' + secure:true if using HTTPS
         secure: false,     // ✅ false for localhost
         path: "/",         // ✅ ensure wide path
         maxAge: 7 * 24 * 60 * 60 * 1000
