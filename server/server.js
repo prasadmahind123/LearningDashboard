@@ -38,19 +38,10 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   credentials: true // <--- IMPORTANT: This allows cookies/sessions to be sent
 }));
-app.set('trust proxy', 1); 
-
 app.use(session({
-  secret: process.env.JWT_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    // 2. CHANGE THESE SETTINGS:
-    secure: true,       // Must be TRUE because Vercel uses HTTPS
-    sameSite: 'none',   // Must be 'none' to allow cross-domain cookies
-    httpOnly: true,     // Prevents JavaScript from reading the cookie (good security)
-    maxAge: 1000 * 60 * 60 * 24 // 1 Day
-  }
+    secret: process.env.JWT_SECRET,
+    resave: false,
+    saveUninitialized: false
 }));
 
 app.use(passport.initialize());
