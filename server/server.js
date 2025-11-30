@@ -30,9 +30,14 @@ const allowedOrigins = ['http://localhost:5173' , 'https://learning-dashboard-tw
 app.use(express.json());
 app.use(cookieParser()); // Middleware to parse cookies
 app.use(cors({
-  origin: ['http://localhost:5173' , 'https://learning-dashboard-two.vercel.app/'],  // your React frontend
-  credentials: true,                // allow cookies
-}));// Middleware for session management
+  origin: [
+    "http://localhost:5173",                          // Local React
+    "https://learning-dashboard-two.vercel.app",      // <--- YOUR NEW FRONTEND URL
+    "https://learning-dashboard-iyjo.vercel.app"      // Your Backend URL (good to have)
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  credentials: true // <--- IMPORTANT: This allows cookies/sessions to be sent
+}));
 app.use(session({
     secret: 'secret123',
     resave: false,
