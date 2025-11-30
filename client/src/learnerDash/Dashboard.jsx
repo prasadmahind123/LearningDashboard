@@ -1,5 +1,3 @@
-// prasadmahind123/learningdashboard/LearningDashboard-e45f05146a782b48485168fb39580fcf72aca81e/client/src/learnerDash/Dashboard.jsx
-
 import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,7 +20,7 @@ import { Badge } from "@/components/ui/badge"
 import { useAppContext } from "../context/AppContext.jsx"
 import { Link } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
-
+import axios from "axios"
 // Animation Variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -47,7 +45,7 @@ const chatVariants = {
 };
 
 export default function Dashboard() {
-  const { learner, paths } = useAppContext();
+  const {axios ,  learner, paths } = useAppContext();
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatMessages, setChatMessages] = useState([
     {
@@ -93,70 +91,89 @@ export default function Dashboard() {
   }, [paths, learner]);
 
   const handleChatSubmit = async (e) => {
-    e.preventDefault()
-    if (!chatInput.trim()) return
+    e.preventDefault();
+    if (!chatInput.trim()) return;
 
+    // 1. Add User Message to UI immediately
     const userMessage = {
       id: Date.now(),
       type: "user",
       message: chatInput,
       timestamp: new Date().toLocaleTimeString(),
-    }
+    };
 
-    setChatMessages((prev) => [...prev, userMessage])
-    setChatInput("")
-    setIsTyping(true)
+    setChatMessages((prev) => [...prev, userMessage]);
+    const currentInput = chatInput; // Store input for the API call
+    setChatInput("");
+    setIsTyping(true);
 
-    setTimeout(() => {
-      const botResponse = generateBotResponse(chatInput)
+    try {
+      // 2. Call the real Backend API
+      // Note: Use the axios instance from your context which likely handles the baseURL
+      const { data } = await axios.post("/api/ai/chat", { 
+        message: currentInput 
+      });
+
+      // 3. Add Bot Response to UI
       const botMessage = {
         id: Date.now() + 1,
         type: "bot",
-        message: botResponse,
+        message: data.reply || "I'm sorry, I couldn't process that.",
         timestamp: new Date().toLocaleTimeString(),
-      }
-      setChatMessages((prev) => [...prev, botMessage])
-      setIsTyping(false)
-    }, 1500)
-  }
-
-  const generateBotResponse = (input) => {
-    const lowerInput = input.toLowerCase()
-
-    if (lowerInput.includes("course") && lowerInput.includes("progress")) {
-      return "You can track your course progress in the 'My courses' section. Each course shows your completion percentage, time spent, and next lessons. Would you like me to explain any specific progress metrics?"
+      };
+      
+      setChatMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      console.error("Chat error", error);
+      const errorMessage = {
+        id: Date.now() + 1,
+        type: "bot",
+        message: "Sorry, I'm having trouble connecting to the server right now.",
+        timestamp: new Date().toLocaleTimeString(),
+      };
+      setChatMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
     }
+  };
 
-    if (lowerInput.includes("certificate")) {
-      return "You'll receive a certificate of completion once you finish all lessons in a course with a passing grade. Certificates can be downloaded from your dashboard and are recognized by many employers."
-    }
+  // const generateBotResponse = (input) => {
+  //   const lowerInput = input.toLowerCase()
 
-    if (lowerInput.includes("assignment") || lowerInput.includes("homework")) {
-      return "Assignments are available within each course module. You can submit them through the course interface, and you'll receive feedback from your instructor. Check the 'Assignments' tab in your enrolled courses."
-    }
+  //   if (lowerInput.includes("course") && lowerInput.includes("progress")) {
+  //     return "You can track your course progress in the 'My courses' section. Each course shows your completion percentage, time spent, and next lessons. Would you like me to explain any specific progress metrics?"
+  //   }
 
-    if (lowerInput.includes("schedule") || lowerInput.includes("time")) {
-      return "You can create a study schedule using our 'Schedule Study Time' feature. I recommend setting aside consistent daily time for learning. Would you like tips on effective study scheduling?"
-    }
+  //   if (lowerInput.includes("certificate")) {
+  //     return "You'll receive a certificate of completion once you finish all lessons in a course with a passing grade. Certificates can be downloaded from your dashboard and are recognized by many employers."
+  //   }
 
-    if (lowerInput.includes("help") || lowerInput.includes("support")) {
-      return "I'm here to help! You can ask me about course navigation, progress tracking, certificates, assignments, study tips, or any other platform features. What specific area would you like assistance with?"
-    }
+  //   if (lowerInput.includes("assignment") || lowerInput.includes("homework")) {
+  //     return "Assignments are available within each course module. You can submit them through the course interface, and you'll receive feedback from your instructor. Check the 'Assignments' tab in your enrolled courses."
+  //   }
 
-    if (lowerInput.includes("instructor") || lowerInput.includes("teacher")) {
-      return "You can contact your instructors through the messaging system in each course. They typically respond within 24 hours. You can also participate in course discussions and Q&A sessions."
-    }
+  //   if (lowerInput.includes("schedule") || lowerInput.includes("time")) {
+  //     return "You can create a study schedule using our 'Schedule Study Time' feature. I recommend setting aside consistent daily time for learning. Would you like tips on effective study scheduling?"
+  //   }
 
-    if (lowerInput.includes("quiz") || lowerInput.includes("test")) {
-      return "Quizzes are available throughout your courses to test your understanding. You can retake most quizzes, and your highest score counts toward your final grade. Practice quizzes don't affect your grade."
-    }
+  //   if (lowerInput.includes("help") || lowerInput.includes("support")) {
+  //     return "I'm here to help! You can ask me about course navigation, progress tracking, certificates, assignments, study tips, or any other platform features. What specific area would you like assistance with?"
+  //   }
 
-    if (lowerInput.includes("download") || lowerInput.includes("offline")) {
-      return "Some course materials can be downloaded for offline viewing, including PDFs and certain videos. Look for the download icon next to eligible content in your courses."
-    }
+  //   if (lowerInput.includes("instructor") || lowerInput.includes("teacher")) {
+  //     return "You can contact your instructors through the messaging system in each course. They typically respond within 24 hours. You can also participate in course discussions and Q&A sessions."
+  //   }
 
-    return "I understand you're asking about our learning platform. I can help with course navigation, progress tracking, certificates, study tips, and platform features. Could you be more specific about what you'd like to know?"
-  }
+  //   if (lowerInput.includes("quiz") || lowerInput.includes("test")) {
+  //     return "Quizzes are available throughout your courses to test your understanding. You can retake most quizzes, and your highest score counts toward your final grade. Practice quizzes don't affect your grade."
+  //   }
+
+  //   if (lowerInput.includes("download") || lowerInput.includes("offline")) {
+  //     return "Some course materials can be downloaded for offline viewing, including PDFs and certain videos. Look for the download icon next to eligible content in your courses."
+  //   }
+
+  //   return "I understand you're asking about our learning platform. I can help with course navigation, progress tracking, certificates, study tips, and platform features. Could you be more specific about what you'd like to know?"
+  // }
 
   const hoursLearned = learner?.totalLearningHours || 0; 
   const eligibleCertificates = learnerPaths.filter(

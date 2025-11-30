@@ -189,7 +189,7 @@ export default function LearnerLayout() {
       <div className="flex flex-1 overflow-hidden max-w-[1600px] mx-auto w-full">
         
         {/* Desktop Sidebar */}
-        <aside className="hidden md:flex w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm h-[calc(100vh-64px)] sticky top-16">
+        <aside className="hidden md:flex w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm h-[calc(100vh-64px)] sticky ">
           <div className="flex-1 py-6 px-4 space-y-1">
              <p className="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Menu</p>
             {sidebarLinks.map((link) => (
