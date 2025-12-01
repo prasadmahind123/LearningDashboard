@@ -68,6 +68,10 @@ const teacherSchema = new mongoose.Schema({
   teachingStatus: { type: String},
   resetOtp: { type: String },
   resetOtpExpires: { type: Date },
+
+    // Subscription fields
+  isSubscribed: { type: Boolean, default: false },
+  subscriptionDate: { type: Date },
 }, {
   timestamps: true,
 });

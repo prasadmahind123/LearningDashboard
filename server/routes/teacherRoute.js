@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerTeacher , loginTeacher , isAuthTeacher , logoutTeacher , getEnrolledStudents , getAllTeachers , updateProfile} from '../controller/teacherController.js';
+import { registerTeacher , loginTeacher , isAuthTeacher , logoutTeacher , getEnrolledStudents , getAllTeachers , updateProfile , subscribeTeacher} from '../controller/teacherController.js';
 import authTeacher from '../middleware/authTeacher.js';
 import {upload} from '../config/multer.js';
 import {
@@ -46,6 +46,8 @@ teacherRouter.delete('/learning-path/:id', authTeacher, deleteLearningPath);
 
 teacherRouter.get("/getAllTeachers" , getAllTeachers)
 
-teacherRouter.put("/updateProfile" , authTeacher , updateProfile)
+teacherRouter.put("/updateProfile" , authTeacher , updateProfile);
+
+teacherRouter.post("/subscribe" , authTeacher , subscribeTeacher);
 
 export default teacherRouter;

@@ -141,28 +141,28 @@ export const isAuthLearner = async (req, res) => {
             return res.json({ success: false, message: "learner not found" });
         }
         return res.json({
-  success: true,
-  learner: {
-    email: learner.email,
-    name: learner.fullName,
-    id: learner._id,
-    totalcoursesEnrolled: learner.totalcoursesEnrolled,
-    totalLearningHours: learner.totalLearningHours,
-    enrolledPaths: learner.enrolledPaths, // not enrollPaths
-    progress: learner.progressStats, // or progress if you have it
-    createdAt: learner.createdAt,
-    lastAccessedWebsite : learner.lastAccessedWebsite,
-    phone: learner.phone,
-    bio: learner.bio,
-    educationLevel: learner.educationLevel,
-    interests: learner.interests,
-    university: learner.university,
-    learningStyle: learner.learningStyle,
-    goals: learner.goals,
-    socialLinks: learner.socialLinks
+          success: true,
+          learner: {
+            email: learner.email,
+            name: learner.fullName,
+            id: learner._id,
+            totalcoursesEnrolled: learner.totalcoursesEnrolled,
+            totalLearningHours: learner.totalLearningHours,
+            enrolledPaths: learner.enrolledPaths, // not enrollPaths
+            progress: learner.progressStats, // or progress if you have it
+            createdAt: learner.createdAt,
+            lastAccessedWebsite : learner.lastAccessedWebsite,
+            phone: learner.phone,
+            bio: learner.bio,
+            educationLevel: learner.educationLevel,
+            interests: learner.interests,
+            university: learner.university,
+            learningStyle: learner.learningStyle,
+            goals: learner.goals,
+            socialLinks: learner.socialLinks
 
-  }
-});
+          }
+        });
 
         
     } catch (error) {

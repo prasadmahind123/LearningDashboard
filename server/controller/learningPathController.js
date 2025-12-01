@@ -610,6 +610,18 @@ export const createLearningPath = async (req, res) => {
     } = req.body;
 
     const teacherId = req.userId;
+
+    const teacher = await Teacher.findById(teacherId);
+
+    // Limit check: 5 paths for non-subscribed users
+    if (!teacher.isSubscribed && teacher.createdPaths.length >= 5) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Free plan limit reached. You can only create 5 paths. Please upgrade to Premium for unlimited access.",
+        requiresSubscription: true
+      });
+    }
+
     let image = null;
 
     // ✅ Upload the course image if present

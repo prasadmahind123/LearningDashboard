@@ -242,3 +242,38 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+export const subscribeTeacher = async (req, res) => {
+  try {
+    const teacherId = req.userId;
+    
+    const updatedTeacher = await Teacher.findByIdAndUpdate(
+      teacherId, 
+      { 
+        isSubscribed: true,
+        subscriptionDate: new Date() 
+      }, 
+      { new: true }
+    );
+
+    if (!updatedTeacher) {
+      return res.status(404).json({ success: false, message: "Teacher not found" });
+    }
+
+    res.json({ 
+      success: true, 
+      message: "Subscription successful! You can now create unlimited paths.", 
+      teacher: {
+        id: updatedTeacher._id,
+        fullName: updatedTeacher.fullName,
+        email: updatedTeacher.email,
+        role: "teacher",
+        isSubscribed: updatedTeacher.isSubscribed,
+        createdPaths: updatedTeacher.createdPaths
+      }
+    });
+  } catch (error) {
+    console.error("Subscription error:", error);
+    res.status(500).json({ success: false, message: "Subscription failed" });
+  }
+};
