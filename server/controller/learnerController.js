@@ -3,7 +3,7 @@ import LearningPath from "../models/learningPath.js";
 import Teacher from "../models/teacher.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { updateLearnerStats } from "../services/learnerStats.js";
+import { updateLearnerStats , getAggregatedActivity } from "../services/learnerStats.js";
 import dayjs from "dayjs";
 // Register a new learner
 
@@ -311,24 +311,29 @@ export const addLearningHours = async (req, res) => {
 export const getLearnerStats = async (req, res) => {
   try {
     const { learnerId } = req.params;
-    console.log(learnerId)
-    await updateLearnerStats(learnerId); // Ensure stats are up-to-date
-    const learner = await Learner.findById(learnerId).select(
-      "totalLearningHours progressStats learningActivity"
-    );
+    
+    // Update calculation first
+    const updatedLearner = await updateLearnerStats(learnerId); 
 
-    res.json(learner);
+    // Aggregate raw activity logs for chart
+    const aggregatedActivity = getAggregatedActivity(updatedLearner.learningActivity);
+
+    res.json({
+      totalLearningHours: updatedLearner.totalLearningHours,
+      progressStats: updatedLearner.progressStats,
+      learningActivity: aggregatedActivity, // Send cleaned data
+      currentStreak: updatedLearner.currentStreak, // Send streak
+      totalCoursesEnrolled: updatedLearner.totalCoursesEnrolled
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error fetching stats" });
   }
 };
 
 export const markModuleCompleted = async (req, res) => {
   try {
     const { studentId, pathId, moduleId, action, hoursSpent = 0 } = req.body;
-
-    console.log(hoursSpent)
 
     if (!studentId || !pathId || !moduleId) {
       return res.status(400).json({ message: "studentId, pathId and moduleId required" });
@@ -337,13 +342,11 @@ export const markModuleCompleted = async (req, res) => {
     const learner = await Learner.findById(studentId);
     if (!learner) return res.status(404).json({ message: "Learner not found" });
 
-    // Find the enrolled path
     const enrolledPath = learner.enrolledPaths.find(
       (p) => p.pathId.toString() === pathId
     );
     if (!enrolledPath) return res.status(404).json({ message: "Not enrolled in this path" });
 
-    // Add or remove module from completedModules
     if (action === "remove") {
       enrolledPath.completedModules = enrolledPath.completedModules.filter(
         (id) => id.toString() !== moduleId
@@ -354,29 +357,25 @@ export const markModuleCompleted = async (req, res) => {
       }
     }
 
-    // Recalculate progress
     const completed = enrolledPath.completedModules.length;
     const total = enrolledPath.totalModules.length;
     enrolledPath.progressPercent = total > 0 ? (completed / total) * 100 : 0;
     enrolledPath.lastAccessed = new Date();
 
-    // Update learning activity
+    // Log activity
     if (hoursSpent > 0) {
+      // Check if an entry exists for TODAY first to keep array cleaner (Optional optimization)
+      // For now, we push a new entry and rely on getLearnerStats aggregation
       learner.learningActivity.push({
         pathId,
         moduleId,
         hoursSpent,
         date: new Date(),
       });
-
-      // Update totalLearningHours
-      learner.totalLearningHours = learner.learningActivity.reduce(
-        (sum, entry) => sum + entry.hoursSpent,
-        0
-      );
     }
 
     await learner.save();
+    await updateLearnerStats(learner._id); // Recalculate total hours/streak
 
     return res.json({
       message: action === "remove" ? "Module marked as incomplete" : "Module marked as completed",
@@ -392,7 +391,7 @@ export const markModuleCompleted = async (req, res) => {
 
 export const getLearningProgress = async (req, res) => {
   try {
-    const { studentId, period } = req.query; // period = "daily" | "weekly"
+    const { studentId, period } = req.query;
     const learner = await Learner.findById(studentId);
     if (!learner) return res.status(404).json({ message: "Learner not found" });
 

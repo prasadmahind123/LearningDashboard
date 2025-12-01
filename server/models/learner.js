@@ -85,12 +85,19 @@ socialLinks: {
     default: 0,
   },
 
+  currentStreak: {
+    type: Number,
+    default: 0,
+  },
+
   // 🔹 Daily learning logs (for time-based charts)
-  learningActivity: [
+   learningActivity: [
     {
       date: { type: Date, default: Date.now },
       hoursSpent: { type: Number, default: 0 },
       coursesCompleted: { type: Number, default: 0 },
+      pathId: { type: mongoose.Schema.Types.ObjectId, ref: "LearningPath" }, // Optional: track which path
+      moduleId: { type: mongoose.Schema.Types.ObjectId }, // Optional: track which module
     },
   ],
 
