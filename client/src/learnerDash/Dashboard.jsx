@@ -47,6 +47,7 @@ const chatVariants = {
 export default function Dashboard() {
   const {axios ,  learner, paths } = useAppContext();
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [chatMessages, setChatMessages] = useState([
     {
       id: 1,

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import toast, { Toaster } from 'react-hot-toast';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Progress } from "@/components/ui/progress"
 import {
   Dialog,
   DialogContent,
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/dialog"
 import {
   BookOpen, Users, DollarSign, TrendingUp, Plus, Eye, Edit, X,
-  Minus, MoreHorizontal, Calendar, Star
+  Minus, MoreHorizontal, Calendar, Star, Crown, CreditCard, CheckCircle2
 } from "lucide-react"
 import { Separator } from "@/components/ui/separator.jsx";
 import { motion, AnimatePresence } from "framer-motion";
@@ -69,7 +70,7 @@ const initialcourseFormState = {
 }
 
 export default function TDashboard() {
-  const { teacher, paths, axios, navigate } = useAppContext();
+  const { teacher, paths, axios, navigate, setTeacher } = useAppContext();
   const [isCreatecourseOpen, setIsCreatecourseOpen] = useState(false)
   const [courseForm, setcourseForm] = useState(initialcourseFormState)
   const [isEditcourseOpen, setIsEditcourseOpen] = useState(false)
@@ -83,6 +84,10 @@ export default function TDashboard() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [moduleTitleToDelete, setModuleTitleToDelete] = useState("");
 
+  // Subscription States
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
   // Sync teacher paths
   useEffect(() => {
     if (!teacher?.createdPaths?.length || !paths?.length) return;
@@ -91,6 +96,13 @@ export default function TDashboard() {
     );
     setLearningPaths(teacherPaths);
   }, [teacher, paths]);
+
+  // Calculate subscription usage
+  const pathsCreatedCount = learningPaths.length;
+  const freePlanLimit = 5;
+  const isSubscribed = teacher?.isSubscribed;
+  const usagePercent = Math.min((pathsCreatedCount / freePlanLimit) * 100, 100);
+
 
   // View course
   const handleViewcourse = (course) => {
@@ -288,8 +300,37 @@ export default function TDashboard() {
         alert('Error creating learning path: ' + response.data.message);
       }
     } catch (error) {
-      console.error('Error creating learning path:', error);
-      alert('Error creating learning path: ' + (error.message || error));
+      // Catch the specific 403 for subscription limit
+      if (error.response && error.response.status === 403) {
+        setIsCreatecourseOpen(false); // Close the create modal
+        setIsSubscriptionModalOpen(true); // Open subscription modal
+        toast.error(error.response.data.message || "Limit reached. Please subscribe.");
+      } else {
+        console.error('Error creating learning path:', error);
+        alert('Error creating learning path: ' + (error.message || error));
+      }
+    }
+  };
+
+  // New Function: Handle Subscription Payment
+  const handleSubscribe = async () => {
+    setIsProcessingPayment(true);
+    try {
+        // Simulate processing time
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const response = await axios.post("/api/teacher/subscribe", {}, { withCredentials: true });
+        
+        if (response.data.success) {
+            toast.success("Subscription Successful! You are now a Premium Instructor.");
+            setTeacher(response.data.teacher); // Update context
+            setIsSubscriptionModalOpen(false);
+        }
+    } catch (error) {
+        console.error("Subscription error:", error);
+        toast.error("Payment failed. Please try again.");
+    } finally {
+        setIsProcessingPayment(false);
     }
   };
 
@@ -508,333 +549,350 @@ export default function TDashboard() {
             <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 Welcome back, {teacher?.fullName || 'Instructor'}
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 flex items-center gap-2">
                 Manage your content and track student performance.
+                {isSubscribed && (
+                    <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200">
+                        <Crown className="h-3 w-3 mr-1 fill-amber-500" /> Premium
+                    </Badge>
+                )}
             </p>
           </motion.div>
 
-          <Dialog open={isCreatecourseOpen} onOpenChange={setIsCreatecourseOpen}>
-            <DialogTrigger asChild>
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 shadow-md">
-                <Plus className="mr-2 h-5 w-5" />
-                Create New Path
-              </Button>
-            </DialogTrigger>
-            
-            {/* ORIGINAL CREATE DIALOG CONTENT (With Scroll Fix) */}
-            <DialogContent className="max-w-full max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Create New learning path</DialogTitle>
-                <DialogDescription>Create a comprehensive learning path</DialogDescription>
-              </DialogHeader>
-
-              <div className="grid gap-6 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">learning path Title</Label>
-                    <Input
-                      id="title"
-                      value={courseForm.title}
-                      onChange={(e) => setcourseForm((prev) => ({ ...prev, title: e.target.value }))}
-                      placeholder="Enter course title"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select
-                      value={courseForm.category}
-                      onValueChange={(value) => setcourseForm((prev) => ({ ...prev, category: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="web-development">Web Development</SelectItem>
-                        <SelectItem value="data-science">Data Science</SelectItem>
-                        <SelectItem value="machine-learning">Machine Learning</SelectItem>
-                        <SelectItem value="mobile-development">Mobile Development</SelectItem>
-                        <SelectItem value="design">Design</SelectItem>
-                        <SelectItem value="marketing">Marketing</SelectItem>
-                        <SelectItem value="cyber-security">Cyber Security</SelectItem>
-                        <SelectItem value="database">Database</SelectItem>
-                        <SelectItem value="devops">DevOps</SelectItem>
-                        <SelectItem value="programming">Programming</SelectItem>
-                        <SelectItem value="cloud-computing">Cloud Computing</SelectItem>
-                        <SelectItem value="Blockchain">Blockchain</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+          <div className="flex items-center gap-4">
+            {!isSubscribed && (
+                <div className="hidden md:block w-48">
+                    <div className="flex justify-between text-xs font-medium text-slate-500 mb-1.5">
+                        <span>Free Plan</span>
+                        <span>{pathsCreatedCount} / {freePlanLimit} Paths</span>
+                    </div>
+                    <Progress value={usagePercent} className="h-2" />
                 </div>
+            )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="image">Image</Label>
-                    <Input
-                    type="file"
-                    id="image"
-                    onChange={(e) => setcourseForm((prev) => ({ ...prev, image: e.target.value }))}
-                    />
-                  </div>
-                      <div className="space-y-2">
-                      <Label htmlFor="isPrivate">isPrivate</Label>
-                      <Select
-                        value={courseForm.isPrivate ? "true" : "false"}
-                        onValueChange={(value) => setcourseForm((prev) => ({ ...prev, isPrivate: value === "true" })) }
-                      >
-                        <SelectTrigger  className="w-full cursor-pointer">
-                          <SelectValue placeholder="Select privacy" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="true">Yes</SelectItem>
-                          <SelectItem value="false">No </SelectItem>
-                        </SelectContent>
-                      </Select>
-                  </div>
-                </div>
+            <Dialog open={isCreatecourseOpen} onOpenChange={setIsCreatecourseOpen}>
+                <DialogTrigger asChild>
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 shadow-md">
+                    <Plus className="mr-2 h-5 w-5" />
+                    Create New Path
+                </Button>
+                </DialogTrigger>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="description">learning path Description</Label>
-                  <Textarea
-                    id="description"
-                    value={courseForm.description}
-                    onChange={(e) => setcourseForm((prev) => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe what students will learn in this course"
-                    rows={3}
-                  />
-                </div>
+                {/* ORIGINAL CREATE DIALOG CONTENT */}
+                <DialogContent className="max-w-full max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Create New learning path</DialogTitle>
+                    <DialogDescription>Create a comprehensive learning path</DialogDescription>
+                  </DialogHeader>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="level">Level</Label>
-                    <Select
-                      value={courseForm.level}
-                      onValueChange={(value) => setcourseForm((prev) => ({ ...prev, level: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="beginner">Beginner</SelectItem>
-                        <SelectItem value="intermediate">Intermediate</SelectItem>
-                        <SelectItem value="advanced">Advanced</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Price ($)</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      value={courseForm.price}
-                      onChange={(e) => setcourseForm((prev) => ({ ...prev, price: e.target.value }))}
-                      placeholder="99.99"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">Total Duration</Label>
-                    <Input
-                      id="duration"
-                      value={courseForm.duration}
-                      onChange={(e) => setcourseForm((prev) => ({ ...prev, duration: e.target.value }))}
-                      placeholder="40 hours"
-                    />
-                  </div>
-                </div>
+                  <div className="grid gap-6 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="title">learning path Title</Label>
+                        <Input
+                          id="title"
+                          value={courseForm.title}
+                          onChange={(e) => setcourseForm((prev) => ({ ...prev, title: e.target.value }))}
+                          placeholder="Enter course title"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="category">Category</Label>
+                        <Select
+                          value={courseForm.category}
+                          onValueChange={(value) => setcourseForm((prev) => ({ ...prev, category: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="web-development">Web Development</SelectItem>
+                            <SelectItem value="data-science">Data Science</SelectItem>
+                            <SelectItem value="machine-learning">Machine Learning</SelectItem>
+                            <SelectItem value="mobile-development">Mobile Development</SelectItem>
+                            <SelectItem value="design">Design</SelectItem>
+                            <SelectItem value="marketing">Marketing</SelectItem>
+                            <SelectItem value="cyber-security">Cyber Security</SelectItem>
+                            <SelectItem value="database">Database</SelectItem>
+                            <SelectItem value="devops">DevOps</SelectItem>
+                            <SelectItem value="programming">Programming</SelectItem>
+                            <SelectItem value="cloud-computing">Cloud Computing</SelectItem>
+                            <SelectItem value="Blockchain">Blockchain</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-                  <div className="space-y-3 w-fit">
-                    <Label htmlFor="code">learning path Code to free access</Label>
-                    <Input
-                      id="code"
-                      value={courseForm.code}
-                      onChange={(e) => setcourseForm((prev) => ({ ...prev, code: e.target.value }))}
-                      placeholder="Enter course code"
-                    />
-                  </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="image">Image</Label>
+                        <Input
+                        type="file"
+                        id="image"
+                        onChange={(e) => setcourseForm((prev) => ({ ...prev, image: e.target.value }))}
+                        />
+                      </div>
+                          <div className="space-y-2">
+                          <Label htmlFor="isPrivate">isPrivate</Label>
+                          <Select
+                            value={courseForm.isPrivate ? "true" : "false"}
+                            onValueChange={(value) => setcourseForm((prev) => ({ ...prev, isPrivate: value === "true" })) }
+                          >
+                            <SelectTrigger  className="w-full cursor-pointer">
+                              <SelectValue placeholder="Select privacy" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="true">Yes</SelectItem>
+                              <SelectItem value="false">No </SelectItem>
+                            </SelectContent>
+                          </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="description">learning path Description</Label>
+                      <Textarea
+                        id="description"
+                        value={courseForm.description}
+                        onChange={(e) => setcourseForm((prev) => ({ ...prev, description: e.target.value }))}
+                        placeholder="Describe what students will learn in this course"
+                        rows={3}
+                      />
+                    </div>
 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-lg font-semibold">path</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addLearningPathItem}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Section
-                    </Button>
-                  </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="level">Level</Label>
+                        <Select
+                          value={courseForm.level}
+                          onValueChange={(value) => setcourseForm((prev) => ({ ...prev, level: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="beginner">Beginner</SelectItem>
+                            <SelectItem value="intermediate">Intermediate</SelectItem>
+                            <SelectItem value="advanced">Advanced</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="price">Price ($)</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          value={courseForm.price}
+                          onChange={(e) => setcourseForm((prev) => ({ ...prev, price: e.target.value }))}
+                          placeholder="99.99"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="duration">Total Duration</Label>
+                        <Input
+                          id="duration"
+                          value={courseForm.duration}
+                          onChange={(e) => setcourseForm((prev) => ({ ...prev, duration: e.target.value }))}
+                          placeholder="40 hours"
+                        />
+                      </div>
+                    </div>
 
-                  <div className="space-y-4 max-h-60 overflow-y-auto">
-                    {courseForm.learningPath.map((item, index) => (
-                      <Card key={index} className="p-4">
-                        <div className="grid gap-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium">Section {index + 1}</h4>
-                            {courseForm.learningPath.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeLearningPathItem(index)}
-                              >
-                                Remove
-                              </Button>
-                            )}
-                          </div>
+                      <div className="space-y-3 w-fit">
+                        <Label htmlFor="code">learning path Code to free access</Label>
+                        <Input
+                          id="code"
+                          value={courseForm.code}
+                          onChange={(e) => setcourseForm((prev) => ({ ...prev, code: e.target.value }))}
+                          placeholder="Enter course code"
+                        />
+                      </div>
 
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label>Section Title</Label>
-                              <Input
-                                value={item.title}
-                                onChange={(e) => updateLearningPathItem(index, "title", e.target.value)}
-                                placeholder="Introduction to React"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Content Type</Label>
-                              <Select
-                                value={item.type}
-                                onValueChange={(value) => updateLearningPathItem(index, "type", value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="video">Video Lesson</SelectItem>
-                                  <SelectItem value="reading">Reading Material</SelectItem>
-                                  <SelectItem value="quiz">Quiz</SelectItem>
-                                  <SelectItem value="assignment">Assignment</SelectItem>
-                                  <SelectItem value="project">Project</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-lg font-semibold">path</Label>
+                        <Button type="button" variant="outline" size="sm" onClick={addLearningPathItem}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Section
+                        </Button>
+                      </div>
 
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label>Description</Label>
-                              <Textarea
-                                value={item.description}
-                                onChange={(e) => updateLearningPathItem(index, "description", e.target.value)}
-                                placeholder="What will students learn in this section?"
-                                rows={2}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Duration</Label>
-                              <Input
-                                value={item.duration}
-                                onChange={(e) => updateLearningPathItem(index, "duration", e.target.value)}
-                                placeholder="2h 30m"
-                              />
-                            </div>
-
-                           <div className="space-y-2">
-                              <Label>External Resource URLs</Label>
-                              {item.urls.map((url, urlIndex) => (
-                                <div key={urlIndex} className="flex gap-2 mb-2">
-                                  <Input
-                                    type="url"
-                                    value={url}
-                                    onChange={(e) => {
-                                      const newUrls = [...item.urls];
-                                      newUrls[urlIndex] = e.target.value;
-                                      updateLearningPathItem(index, "urls", newUrls);
-                                    }}
-                                    placeholder="https://youtube.com/... or https://docs.google.com/..."
-                                  />
+                      <div className="space-y-4 max-h-60 overflow-y-auto">
+                        {courseForm.learningPath.map((item, index) => (
+                          <Card key={index} className="p-4">
+                            <div className="grid gap-4">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-medium">Section {index + 1}</h4>
+                                {courseForm.learningPath.length > 1 && (
                                   <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    onClick={() => {
-                                      const newUrls = item.urls.filter((_, i) => i !== urlIndex);
-                                      updateLearningPathItem(index, "urls", newUrls);
-                                    }}
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeLearningPathItem(index)}
                                   >
-                                    ✕
+                                    Remove
+                                  </Button>
+                                )}
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label>Section Title</Label>
+                                  <Input
+                                    value={item.title}
+                                    onChange={(e) => updateLearningPathItem(index, "title", e.target.value)}
+                                    placeholder="Introduction to React"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Content Type</Label>
+                                  <Select
+                                    value={item.type}
+                                    onValueChange={(value) => updateLearningPathItem(index, "type", value)}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="video">Video Lesson</SelectItem>
+                                      <SelectItem value="reading">Reading Material</SelectItem>
+                                      <SelectItem value="quiz">Quiz</SelectItem>
+                                      <SelectItem value="assignment">Assignment</SelectItem>
+                                      <SelectItem value="project">Project</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label>Description</Label>
+                                  <Textarea
+                                    value={item.description}
+                                    onChange={(e) => updateLearningPathItem(index, "description", e.target.value)}
+                                    placeholder="What will students learn in this section?"
+                                    rows={2}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Duration</Label>
+                                  <Input
+                                    value={item.duration}
+                                    onChange={(e) => updateLearningPathItem(index, "duration", e.target.value)}
+                                    placeholder="2h 30m"
+                                  />
+                                </div>
+
+                              <div className="space-y-2">
+                                  <Label>External Resource URLs</Label>
+                                  {item.urls.map((url, urlIndex) => (
+                                    <div key={urlIndex} className="flex gap-2 mb-2">
+                                      <Input
+                                        type="url"
+                                        value={url}
+                                        onChange={(e) => {
+                                          const newUrls = [...item.urls];
+                                          newUrls[urlIndex] = e.target.value;
+                                          updateLearningPathItem(index, "urls", newUrls);
+                                        }}
+                                        placeholder="https://youtube.com/... or https://docs.google.com/..."
+                                      />
+                                      <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        onClick={() => {
+                                          const newUrls = item.urls.filter((_, i) => i !== urlIndex);
+                                          updateLearningPathItem(index, "urls", newUrls);
+                                        }}
+                                      >
+                                        ✕
+                                      </Button>
+                                    </div>
+                                  ))}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => updateLearningPathItem(index, "urls", [...item.urls, ""])}
+                                  >
+                                    + Add Another URL
                                   </Button>
                                 </div>
-                              ))}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => updateLearningPathItem(index, "urls", [...item.urls, ""])}
-                              >
-                                + Add Another URL
-                              </Button>
-                            </div>
-                          </div>
-
-                          <div className="space-y-2 mt-4">
-                              <Label>Upload Documents / Files (PDF, Word, Excel, PPT, BibTex, etc.)</Label>
-                              <Input
-                                type="file"
-                                multiple
-                                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.bib,.bibtex,.mp4,.mov"
-                                onChange={(e) => {
-                                  const newFiles = Array.from(e.target.files || []).map(file => ({ file: file, description: "" }));
-                                  updateLearningPathItem(index, "files", {
-                                    ...item.files,
-                                    documents: [...(item.files.documents || []), ...newFiles],
-                                  });
-                                }}
-                              />
-                              <div className="mt-2 space-y-2">
-                                {item.files.documents?.map((file, fileIndex) => (
-                                  <div
-                                    key={file.file.name + fileIndex}
-                                    className="flex items-center justify-between border p-2 rounded text-sm"
-                                  >
-                                    <div className="flex-1">
-                                      <span>{file.file.name}</span>
-                                      <Input
-                                        placeholder="File description..."
-                                        className="text-xs h-8 mt-1"
-                                        value={file.description}
-                                        onChange={(e) => {
-                                          const newDescription = e.target.value;
-                                          const updatedDocs = item.files.documents.map((doc, i) =>
-                                            i === fileIndex ? { ...doc, description: newDescription } : doc
-                                          );
-                                          updateLearningPathItem(index, "files", {
-                                            ...item.files,
-                                            documents: updatedDocs,
-                                          });
-                                        }}
-                                      />
-                                    </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        const updatedDocs = item.files.documents.filter((_, i) => i !== fileIndex);
-                                        updateLearningPathItem(index, "files", {
-                                          ...item.files,
-                                          documents: updatedDocs,
-                                        });
-                                      }}
-                                    >
-                                      Remove
-                                    </Button>
-                                  </div>
-                                ))}
                               </div>
-                            </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              </div>
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreatecourseOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateLearningPath}>
-                  Create learning path
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                              <div className="space-y-2 mt-4">
+                                  <Label>Upload Documents / Files (PDF, Word, Excel, PPT, BibTex, etc.)</Label>
+                                  <Input
+                                    type="file"
+                                    multiple
+                                    accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.bib,.bibtex,.mp4,.mov"
+                                    onChange={(e) => {
+                                      const newFiles = Array.from(e.target.files || []).map(file => ({ file: file, description: "" }));
+                                      updateLearningPathItem(index, "files", {
+                                        ...item.files,
+                                        documents: [...(item.files.documents || []), ...newFiles],
+                                      });
+                                    }}
+                                  />
+                                  <div className="mt-2 space-y-2">
+                                    {item.files.documents?.map((file, fileIndex) => (
+                                      <div
+                                        key={file.file.name + fileIndex}
+                                        className="flex items-center justify-between border p-2 rounded text-sm"
+                                      >
+                                        <div className="flex-1">
+                                          <span>{file.file.name}</span>
+                                          <Input
+                                            placeholder="File description..."
+                                            className="text-xs h-8 mt-1"
+                                            value={file.description}
+                                            onChange={(e) => {
+                                              const newDescription = e.target.value;
+                                              const updatedDocs = item.files.documents.map((doc, i) =>
+                                                i === fileIndex ? { ...doc, description: newDescription } : doc
+                                              );
+                                              updateLearningPathItem(index, "files", {
+                                                ...item.files,
+                                                documents: updatedDocs,
+                                              });
+                                            }}
+                                          />
+                                        </div>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => {
+                                            const updatedDocs = item.files.documents.filter((_, i) => i !== fileIndex);
+                                            updateLearningPathItem(index, "files", {
+                                              ...item.files,
+                                              documents: updatedDocs,
+                                            });
+                                          }}
+                                        >
+                                          Remove
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsCreatecourseOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleCreateLearningPath}>
+                      Create learning path
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -922,6 +980,59 @@ export default function TDashboard() {
             </Card>
         </motion.div>
       </motion.main>
+
+      {/* --- SUBSCRIPTION MODAL --- */}
+      <Dialog open={isSubscriptionModalOpen} onOpenChange={setIsSubscriptionModalOpen}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-0 shadow-2xl">
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 text-center text-white">
+                <div className="mx-auto w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4 backdrop-blur-sm">
+                    <Crown className="h-8 w-8 text-amber-300 fill-amber-300" />
+                </div>
+                <DialogTitle className="text-2xl font-bold text-white mb-2">Upgrade to Premium</DialogTitle>
+                <DialogDescription className="text-indigo-100 text-base">
+                    Unlock unlimited path creation and advanced analytics.
+                </DialogDescription>
+            </div>
+            
+            <div className="p-6 space-y-6">
+                <div className="flex justify-center items-baseline gap-1">
+                    <span className="text-4xl font-bold text-slate-900 dark:text-white">$19.99</span>
+                    <span className="text-slate-500">/month</span>
+                </div>
+
+                <ul className="space-y-3">
+                    <li className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                        <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                        <span>Create <strong>unlimited</strong> learning paths</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                        <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                        <span>Advanced student analytics dashboard</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                        <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                        <span>Priority support & verified badge</span>
+                    </li>
+                </ul>
+
+                <Button 
+                    className="w-full h-12 text-base bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg transition-all"
+                    onClick={handleSubscribe}
+                    disabled={isProcessingPayment}
+                >
+                    {isProcessingPayment ? (
+                        <span className="flex items-center gap-2">Processing...</span>
+                    ) : (
+                        <span className="flex items-center gap-2"><CreditCard className="h-4 w-4" /> Subscribe Now</span>
+                    )}
+                </Button>
+                
+                <p className="text-xs text-center text-slate-400">
+                    Secure payment via Stripe. Cancel anytime.
+                </p>
+            </div>
+        </DialogContent>
+      </Dialog>
 
       {/* --- ALL OTHER DIALOGS (EXACTLY AS PROVIDED IN ORIGINAL) --- */}
       

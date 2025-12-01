@@ -20,6 +20,7 @@ import {
 import { useAppContext } from "../context/AppContext.jsx";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { Loader } from "../components/Loader.jsx";
 
 const categories = [
   "All", "Web Development", "Data Science", "Marketing", "Mobile Development",
@@ -55,9 +56,11 @@ export default function MyCourses() {
   const [sortBy, setSortBy] = useState("Featured");
   const [currentPage, setCurrentPage] = useState(1);
   const [learnerPaths, setLearnerPaths] = useState([]);
+  const [loading, setLoading] = useState(false);
   const coursesPerPage = 8;
 
   useEffect(() => {
+    setLoading(true);
     if (!learner?.enrolledPaths?.length || !paths?.length) return;
 
     const mapped = learner.enrolledPaths
@@ -72,10 +75,12 @@ export default function MyCourses() {
       .filter(Boolean);
 
     setLearnerPaths(mapped);
+    setLoading(false);
   }, [paths, learner]);
 
   // Filter Logic (Unchanged)
   const filtered = learnerPaths.filter((p) => {
+    
     const matchesSearch =
       p.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -105,6 +110,14 @@ export default function MyCourses() {
   const totalPages = Math.ceil(sortedPaths.length / coursesPerPage);
   const startIndex = (currentPage - 1) * coursesPerPage;
   const paginatedPaths = sortedPaths.slice(startIndex, startIndex + coursesPerPage);
+
+  if (loading) {
+    return (
+      <div className="flex-1 h-full flex items-center justify-center bg-slate-50/50 dark:bg-slate-950 p-6 md:p-8">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 h-full overflow-y-auto bg-slate-50/50 dark:bg-slate-950 p-6 md:p-8">
