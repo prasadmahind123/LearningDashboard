@@ -92,7 +92,6 @@ export const chatWithEduBot = async (req, res) => {
     // 2. Construct the System Prompt / Context
     const courseContext = JSON.stringify(courses);
 
-    console.log(courseContext)
     
     const systemPrompt = `
       You are "EduBot", a helpful AI assistant for the "EduPlatform" learning dashboard.

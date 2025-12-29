@@ -43,7 +43,7 @@ export const registerLearner = async (req, res) => {
             sameSite:  'none' ,
             path : '/'
             
-        });
+          });
 
         return res.json({
             success: true,
