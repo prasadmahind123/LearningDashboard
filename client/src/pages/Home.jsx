@@ -9,6 +9,7 @@ import { MovingCards } from '@/components/MovingCards'
 import { ArrowRight, CheckCircle2, Layout, BookOpen, BarChart3, ShieldCheck, Search } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import FadeInSection from '@/components/FadeInSection'
+import ChatBot from '@/components/ChatBot'
 
 const features = [
   {
@@ -48,32 +49,48 @@ export default function Home() {
     <div className="bg-background min-h-screen font-sans selection:bg-blue-100 dark:selection:bg-blue-900">
       
       {/* Hero Section with BackgroundLines */}
-      <BackgroundLines className="flex items-center justify-center w-full flex-col px-4 py-20 md:h-[90vh]">
+      <BackgroundLines className="flex items-center justify-center w-full flex-col px-4 py-12 md:py-20 min-h-[80vh] md:h-[90vh]">
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="z-20 flex flex-col items-center text-center max-w-4xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="z-20 flex flex-col items-center text-center max-w-4xl"
         >
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-slate-900 dark:text-white mb-6">
-              Learn, Teach, and <br />
-              <span className="text-blue-600 dark:text-blue-400">Grow Together.</span>
-            </h1>
-            <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300 mb-8 max-w-2xl leading-relaxed">
-              The all-in-one platform for structured learning paths. Whether you are a student aiming for mastery or an expert sharing knowledge, EduPlatform bridges the gap.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
-              <Button size="lg" className="rounded-full h-14 px-8 text-lg bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25 transition-all cursor-pointer">
-                <NavLink to={learner ? "/learner" : "/register"}>
-                  {learner ? "Go to Dashboard" : "Get Started Now"}
-                </NavLink>
-              </Button>
-              <Button size="lg" variant="outline" className="rounded-full h-14 px-8 text-lg border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-black/50 backdrop-blur-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                <NavLink to="/courses" className="flex items-center gap-2">
-                  Browse Paths <Search className="w-4 h-4" />
-                </NavLink>
-              </Button>
-            </div>
+          {/* Adjusted text sizes: 3xl for small mobile, 5xl for large mobile/tablet, 7xl for desktop */}
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight text-slate-900 dark:text-white mb-4 md:mb-6">
+            Learn, Teach, and <br />
+            <span className="text-blue-600 dark:text-blue-400">Grow Together.</span>
+          </h1>
+
+          {/* Adjusted text size and max-width for better readability on small screens */}
+          <p className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-300 mb-6 md:mb-8 max-w-[90%] md:max-w-2xl leading-relaxed">
+            The all-in-one platform for structured learning paths. Whether you are a student aiming for mastery or an expert sharing knowledge, EduPlatform bridges the gap.
+          </p>
+
+          {/* Using sm:flex-row to stack vertically on mobile and horizontally on tablets up */}
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full sm:w-auto justify-center items-center">
+            {/* Set w-full for mobile so buttons are easy to tap */}
+            <Button 
+              size="lg" 
+              className="w-full sm:w-auto rounded-full h-12 md:h-14 px-6 md:px-8 text-base md:text-lg bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-all cursor-pointer"
+              asChild
+            >
+              <NavLink to={learner ? "/learner" : "/register"}>
+                {learner ? "Go to Dashboard" : "Get Started Now"}
+              </NavLink>
+            </Button>
+
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="w-full sm:w-auto rounded-full h-12 md:h-14 px-6 md:px-8 text-base md:text-lg border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-black/50 backdrop-blur-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              asChild
+            >
+              <NavLink to="/courses" className="flex items-center justify-center gap-2">
+                Browse Paths <Search className="w-4 h-4" />
+              </NavLink>
+            </Button>
+          </div>
         </motion.div>
       </BackgroundLines>
 
@@ -172,6 +189,8 @@ export default function Home() {
             </FadeInSection>
          </div>
       </section>
+
+      <ChatBot />
 
       {/* Infinite Scroll Section */}
       <section className="py-10 bg-slate-900 text-white overflow-hidden w-full h-fit">

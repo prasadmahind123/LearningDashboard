@@ -23,6 +23,7 @@ import CourseID from "./pages/CourseID";
 import ForgotPassword from "./pages/ForgotPassword";
 import CourseDetails from "./pages/CourseDetails";
 import PdfViewer from "./pages/PdfViewer";
+import ChatBot from "./components/ChatBot";
 import { useAppContext } from "./context/AppContext.jsx";
 
 function App() {
@@ -65,6 +66,7 @@ function App() {
         </Routes>
       </div>
       {!hideNavFooter && <Footer />}
+      <ChatBot />
     </div>
   );
 }

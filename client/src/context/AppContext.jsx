@@ -452,7 +452,7 @@ export const AppProvider = ({ children }) => {
           if (e.response?.status !== 401) throw e;
         }
 
-        // ❌ No valid session
+        
         setIsAuthenticated(false);
         setUserRole(null);
         setTeacher(null);
