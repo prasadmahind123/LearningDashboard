@@ -1,5 +1,5 @@
-"use client"
 
+import { useEffect } from "react"
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Users, UserCheck, BookOpen, Eye, MessageSquare, ShieldAlert, BarChart3 } from "lucide-react"
@@ -34,6 +34,10 @@ const tabContentVariants = {
 export default function Admin() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTab, setSelectedTab] = useState("learners")
+
+  useEffect(() => {
+    document.title = "Dashboard - Admin Portal";
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 flex flex-col">
