@@ -41,6 +41,15 @@ enrolledPaths: [
     totalModules: [{ type: mongoose.Schema.Types.ObjectId }], // IDs of all modules in that path
     progressPercent: { type: Number, default: 0 }, // auto-calculated from completedModules.length / totalModules.length
     lastAccessed: { type: Date, default: Date.now },
+
+    resourceUsage: [
+        {
+          resourceId: { type: String }, // Can be a File ID or "module_view"
+          moduleId: { type: mongoose.Schema.Types.ObjectId, ref: "content" },
+          timeSpent: { type: Number, default: 0 }, // In seconds
+          lastAccessed: { type: Date, default: Date.now }
+        }
+      ]
   },
 ],
 

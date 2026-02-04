@@ -607,7 +607,12 @@ export const createLearningPath = async (req, res) => {
       level,
       duration,
       content,
+      skills
     } = req.body;
+
+    const parsedSkills =
+      typeof skills === "string" ? JSON.parse(skills) : skills;
+
 
     const teacherId = req.userId;
 
@@ -701,6 +706,7 @@ export const createLearningPath = async (req, res) => {
       image, // ✅ Now properly stored
       isPrivate: isPrivate || false,
       learners: learners || [],
+      skills: parsedSkills || [],
       code: code || "",
       createdBy: teacherId,
       content: processedContent,

@@ -4,6 +4,7 @@ import Teacher from "../models/teacher.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { updateLearnerStats , getAggregatedActivity } from "../services/learnerStats.js";
+import { calculateBadges } from "../utils/badges.js";
 import dayjs from "dayjs";
 // Register a new learner
 
@@ -176,8 +177,8 @@ export const logoutLearner = async (req, res) => {
   try {
     res.clearCookie("learnerToken", {
       httpOnly: true,
-      sameSite: "lax",
-      secure: false,
+      sameSite: "none",
+      secure: true,
       path: "/",         // ✅ Must match the path used when setting
     });
     return res.json({ success: true, message: "Learner logged out successfully" });
@@ -308,23 +309,75 @@ export const addLearningHours = async (req, res) => {
   }
 };
 
+
+
 export const getLearnerStats = async (req, res) => {
   try {
     const { learnerId } = req.params;
-    
-    // Update calculation first
+    // 1. Update basic stats (hours, streaks)
     const updatedLearner = await updateLearnerStats(learnerId); 
 
-    // Aggregate raw activity logs for chart
+    // 2. Fetch Enrolled Paths with their Skill Definitions
+    // We need to populate 'pathId' to access the 'skills' array we just added
+    const learnerWithSkills = await Learner.findById(learnerId).populate({
+      path: 'enrolledPaths.pathId',
+      select: 'title skills' // Only fetch title and skills
+    });
+
+    // 3. 🧠 CALCULATE SKILL POINTS
+    const skillMap = {};
+
+    learnerWithSkills.enrolledPaths.forEach((enrollment) => {
+      const course = enrollment.pathId;
+
+      if (!course || !Array.isArray(course.skills) || course.skills.length === 0) return;
+
+      const progressFactor = (enrollment.progressPercent || 0) / 100;
+
+      course.skills.forEach((skill) => {
+        if (!skillMap[skill.name]) {
+          skillMap[skill.name] = { name: skill.name, earned: 0, total: 0 };
+        }
+
+        skillMap[skill.name].total += skill.points;
+        skillMap[skill.name].earned += skill.points * progressFactor;
+      });
+    });
+
+    const maxSkillPoints = Math.max(
+      ...Object.values(skillMap).map(s => s.total)
+    );
+
+    const skillProfile = Object.values(skillMap).map(s => ({
+      subject: s.name,
+      A: Math.round((s.earned / maxSkillPoints) * 100),
+      fullMark: 100
+    }));
+
+
+    // If no skills yet, provide default data so the chart doesn't crash
+    const finalSkillProfile = skillProfile.length > 0 ? skillProfile : [
+      { subject: 'Coding', A: 0, fullMark: 100 },
+      { subject: 'Design', A: 0, fullMark: 100 },
+      { subject: 'Communication', A: 0, fullMark: 100 },
+      { subject: 'Logic', A: 0, fullMark: 100 },
+      { subject: 'Management', A: 0, fullMark: 100 },
+    ];
+
     const aggregatedActivity = getAggregatedActivity(updatedLearner.learningActivity);
+
+    const badges = calculateBadges(updatedLearner);
 
     res.json({
       totalLearningHours: updatedLearner.totalLearningHours,
       progressStats: updatedLearner.progressStats,
-      learningActivity: aggregatedActivity, // Send cleaned data
-      currentStreak: updatedLearner.currentStreak, // Send streak
-      totalCoursesEnrolled: updatedLearner.totalCoursesEnrolled
+      learningActivity: aggregatedActivity,
+      currentStreak: updatedLearner.currentStreak,
+      totalCoursesEnrolled: updatedLearner.totalCoursesEnrolled,
+      skillProfile: finalSkillProfile , // ✅ Sending the calculated skills
+      badges : badges
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error fetching stats" });
@@ -457,3 +510,133 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+
+
+
+export const trackHeartbeat = async (req, res) => {
+  try {
+    const { pathId, moduleId, resourceId, duration } = req.body;
+    const learnerId = req.userId;
+
+    if (!pathId || !moduleId || !duration) {
+      return res.status(400).json({ message: "pathId, moduleId, duration required" });
+    }
+
+    // 1. Find learner
+    const learner = await Learner.findById(learnerId);
+    if (!learner) return res.status(404).json({ message: "Learner not found" });
+
+    // 2. Find enrolled path
+    const enrolledPath = learner.enrolledPaths.find(
+      (p) => p.pathId.toString() === pathId
+    );
+
+    if (!enrolledPath) {
+      return res.status(403).json({ message: "Not enrolled in this path" });
+    }
+
+    // 3. Update resource usage (aggregate, not duplicate)
+    const targetResource = resourceId || "module_view";
+
+    let usageEntry = enrolledPath.resourceUsage.find(
+      (r) =>
+        r.resourceId === targetResource &&
+        r.moduleId?.toString() === moduleId
+    );
+
+    if (usageEntry) {
+      usageEntry.timeSpent += duration;
+      usageEntry.lastAccessed = new Date();
+    } else {
+      enrolledPath.resourceUsage.push({
+        resourceId: targetResource,
+        moduleId: moduleId,
+        timeSpent: duration,
+        lastAccessed: new Date(),
+      });
+    }
+
+    // 4. Update total learning hours (seconds → hours)
+    const hoursAdded = duration / 3600;
+    learner.totalLearningHours += hoursAdded;
+
+    // 5. Update daily activity log
+    const today = new Date();
+    const todayLog = learner.learningActivity.find(
+      (e) => e.date.toDateString() === today.toDateString()
+    );
+
+    if (todayLog) {
+      todayLog.hoursSpent += hoursAdded;
+      todayLog.pathId = pathId;
+      todayLog.moduleId = moduleId;
+    } else {
+      learner.learningActivity.push({
+        date: today,
+        hoursSpent: hoursAdded,
+        pathId,
+        moduleId,
+      });
+    }
+
+    await learner.save();
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Heartbeat Error:", error);
+    return res.status(500).json({ message: "Tracking failed" });
+  }
+};
+
+export const enrollByCode = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const studentId = req.userId;
+
+    if (!code) return res.status(400).json({ message: "Class code is required" });
+
+    // 1. Find Path by Code
+    const path = await LearningPath.findOne({ code });
+    if (!path) {
+      return res.status(404).json({ message: "Invalid class code. Please check and try again." });
+    }
+
+    // 2. Check if already enrolled
+    const learner = await Learner.findById(studentId);
+    const isEnrolled = learner.enrolledPaths.some(p => p.pathId.toString() === path._id.toString());
+
+    if (isEnrolled) {
+      return res.status(400).json({ message: "You are already enrolled in this class." });
+    }
+
+    // 3. Enroll Learner
+    const moduleIds = path.content?.map((m) => m._id) || [];
+    
+    learner.enrolledPaths.push({
+      pathId: path._id,
+      totalModules: moduleIds,
+      completedModules: [],
+      progressPercent: 0,
+      resourceUsage: [], // Initialize for our tracking
+      lastAccessed: new Date(),
+    });
+
+    // Update Learner Stats
+    learner.totalcoursesEnrolled += 1;
+    
+    // Add learner to the path's student list
+    path.learners.push(studentId);
+
+    await learner.save();
+    await path.save();
+
+    res.status(200).json({ 
+      success: true, 
+      message: `Successfully joined "${path.title}"`,
+      pathId: path._id 
+    });
+
+  } catch (error) {
+    console.error("Enroll by code error:", error);
+    res.status(500).json({ message: "Server error while joining class" });
+  }
+};

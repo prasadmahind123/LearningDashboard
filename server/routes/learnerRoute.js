@@ -1,6 +1,6 @@
 import express from 'express';
 import { registerLearner, loginLearner, isAuthLearner, logoutLearner , enrollInPath , getEnrolledPaths , getAllLearners , 
-    addLearningHours , getLearnerStats , markModuleCompleted, getLearningProgress , updateLastAccess , updateProfile} from '../controller/learnerController.js';
+    addLearningHours , getLearnerStats , markModuleCompleted, getLearningProgress , updateLastAccess , updateProfile , trackHeartbeat , enrollByCode} from '../controller/learnerController.js';
 import authLearner from '../middleware/authLearner.js';
 import { upload } from '../config/multer.js';
 
@@ -33,5 +33,8 @@ learnerRouter.post("/update-last-access",authLearner, updateLastAccess)
 
 learnerRouter.put("/update-profile", authLearner, updateProfile)
 
+learnerRouter.post('/heartbeat', authLearner, trackHeartbeat);
+
+learnerRouter.post('/join-by-code', authLearner, enrollByCode);
 
 export default learnerRouter;

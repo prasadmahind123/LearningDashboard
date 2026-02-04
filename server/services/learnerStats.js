@@ -34,7 +34,7 @@ export const updateLearnerStats = async (learnerId) => {
     .reduce((sum, entry) => sum + entry.hoursSpent, 0);
 
   // 3. Calculate Streak
-  learner.currentStreak = calculateStreak(learner.learningActivity);
+  learner.currentStreak = calculateCurrentStreak(learner.learningActivity);
 
   learner.totalCoursesEnrolled = learner.enrolledPaths.length;
 
@@ -43,45 +43,45 @@ export const updateLearnerStats = async (learnerId) => {
 };
 
 // Helper: Calculate daily streak
-const calculateStreak = (activities) => {
-  if (!activities || activities.length === 0) return 0;
+// const calculateStreak = (activities) => {
+//   if (!activities || activities.length === 0) return 0;
 
-  // Get all unique dates where activity occurred
-  const activityDates = [
-    ...new Set(
-      activities.map((a) => dayjs(a.date).format("YYYY-MM-DD"))
-    ),
-  ].sort((a, b) => new Date(b) - new Date(a)); // Sort descending (newest first)
+//   // Get all unique dates where activity occurred
+//   const activityDates = [
+//     ...new Set(
+//       activities.map((a) => dayjs(a.date).format("YYYY-MM-DD"))
+//     ),
+//   ].sort((a, b) => new Date(b) - new Date(a)); // Sort descending (newest first)
 
-  if (activityDates.length === 0) return 0;
+//   if (activityDates.length === 0) return 0;
 
-  const today = dayjs().format("YYYY-MM-DD");
-  const yesterday = dayjs().subtract(1, "day").format("YYYY-MM-DD");
+//   const today = dayjs().format("YYYY-MM-DD");
+//   const yesterday = dayjs().subtract(1, "day").format("YYYY-MM-DD");
 
-  // If no activity today or yesterday, streak is broken
-  if (activityDates[0] !== today && activityDates[0] !== yesterday) {
-    return 0;
-  }
+//   // If no activity today or yesterday, streak is broken
+//   if (activityDates[0] !== today && activityDates[0] !== yesterday) {
+//     return 0;
+//   }
 
-  let streak = 1; // Start with 1 since we confirmed activity today/yesterday
+//   let streak = 1; // Start with 1 since we confirmed activity today/yesterday
 
-  // Iterate backwards to check consecutiveness
-  // Start comparing index 0 vs index 1, index 1 vs index 2...
-  for (let i = 0; i < activityDates.length - 1; i++) {
-    const current = dayjs(activityDates[i]);
-    const previous = dayjs(activityDates[i + 1]);
+//   // Iterate backwards to check consecutiveness
+//   // Start comparing index 0 vs index 1, index 1 vs index 2...
+//   for (let i = 0; i < activityDates.length - 1; i++) {
+//     const current = dayjs(activityDates[i]);
+//     const previous = dayjs(activityDates[i + 1]);
 
-    const diff = current.diff(previous, "day");
+//     const diff = current.diff(previous, "day");
 
-    if (diff === 1) {
-      streak++;
-    } else {
-      break; // Streak broken
-    }
-  }
+//     if (diff === 1) {
+//       streak++;
+//     } else {
+//       break; // Streak broken
+//     }
+//   }
 
-  return streak;
-};
+//   return streak;
+// };
 
 // Helper: Aggregate activity for charts
 export const getAggregatedActivity = (activities) => {
@@ -100,4 +100,40 @@ export const getAggregatedActivity = (activities) => {
     date,
     hoursSpent: hours,
   }));
+};
+
+const calculateCurrentStreak = (learningActivity = []) => {
+  if (learningActivity.length === 0) return 0;
+
+  // 1️⃣ Extract unique dates (YYYY-MM-DD)
+  const uniqueDays = [
+    ...new Set(
+      learningActivity.map(a =>
+        new Date(a.date).toISOString().split("T")[0]
+      )
+    )
+  ];
+
+  // 2️⃣ Sort days descending (latest first)
+  uniqueDays.sort((a, b) => new Date(b) - new Date(a));
+
+  let streak = 0;
+  let expectedDate = new Date();
+
+  // Normalize expectedDate to YYYY-MM-DD
+  expectedDate = expectedDate.toISOString().split("T")[0];
+
+  for (const day of uniqueDays) {
+    if (day === expectedDate) {
+      streak++;
+      // move expected date back by 1 day
+      const d = new Date(expectedDate);
+      d.setDate(d.getDate() - 1);
+      expectedDate = d.toISOString().split("T")[0];
+    } else {
+      break; // streak broken
+    }
+  }
+
+  return streak;
 };

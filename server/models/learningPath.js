@@ -42,6 +42,12 @@ const learningPathSchema = new mongoose.Schema(
     level: { type: String }, 
     price: { type: Number },
     duration: { type: String },
+    skills: [
+      {
+        name: { type: String, required: true }, // e.g., "React", "Communication"
+        points: { type: Number, default: 10 },  // Max points available for this skill in this course
+      }
+    ],
 
     
     createdBy: {
