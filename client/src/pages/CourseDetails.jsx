@@ -112,6 +112,7 @@ export default function CourseDetails() {
   const [completedModules, setCompletedModules] = useState([]);
   const [learnerPathDetails, setLearnerPathDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTabActive, setIsTabActive] = useState(true);
   
   // AI Modal
   const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -122,9 +123,7 @@ export default function CourseDetails() {
   // Video Selection
   const [selectedVideoByModule, setSelectedVideoByModule] = useState({});
 
-  // Timers
-  const moduleStartTime = useRef(null);
-  const heartbeatTimer = useRef(null);
+
 
   // --- Effects ---
   useEffect(() => {
@@ -137,50 +136,64 @@ export default function CourseDetails() {
     }
   }, [learner, course]);
 
-  useEffect(() => {
-    moduleStartTime.current = new Date();
-    const handleBeforeUnload = async () => await sendTimeSpent();
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    startHeartbeat();
-    return () => {
-      stopHeartbeat();
-      sendTimeSpent();
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [selectedModuleIndex]);
 
-  const startHeartbeat = () => {
-    stopHeartbeat();
-    heartbeatTimer.current = setInterval(() => sendTimeSpent(), 5 * 60 * 1000);
-  };
-
-  const stopHeartbeat = () => {
-    if (heartbeatTimer.current) clearInterval(heartbeatTimer.current);
-  };
 
   const selectedModule = useMemo(() => {
     return course?.content?.[selectedModuleIndex] || null;
   }, [course, selectedModuleIndex]);
 
-  const sendTimeSpent = async () => {
-    if (!selectedModule || !moduleStartTime.current) return;
-    const now = new Date();
-    const timeSpentHours = (now - moduleStartTime.current) / (1000 * 60 * 60);
-    if (timeSpentHours <= 0) return;
-    moduleStartTime.current = new Date();
+  useEffect(() => {
+    const handleFocus = () => setIsTabActive(true);
+    const handleBlur = () => setIsTabActive(false);
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("blur", handleBlur);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("blur", handleBlur);
+    };
+  }, []);
+
+useEffect(() => {
+  // Ensure valid tracking context
+  if (!course?._id || !selectedModule?._id) return;
+
+  const PING_INTERVAL = 30 * 1000; // 30 seconds
+
+  const heartbeatInterval = setInterval(async () => {
+    // Track only when tab is active and page is not loading
+    if (!isTabActive || isLoading) return;
 
     try {
-      await axios.put("/api/learner/complete-module", {
-        studentId: learner._id,
-        pathId: course._id,
-        moduleId: selectedModule._id,
-        action: completedModules.includes(selectedModule._id) ? "remove" : "add",
-        hoursSpent: timeSpentHours,
-      });
+      await axios.post(
+        "/api/learner/heartbeat",
+        {
+          pathId: course._id,
+          moduleId: selectedModule._id,
+          resourceId: "main_content",
+          duration: 30, // seconds
+        },
+        { withCredentials: true }
+      );
+
+      console.log("💗 Activity Logged");
     } catch (error) {
-      console.error("Failed to send time spent:", error);
+      console.error("Tracking ping failed", error);
     }
+  }, PING_INTERVAL);
+
+  return () => {
+    clearInterval(heartbeatInterval);
   };
+}, [
+  course?._id,
+  selectedModule?._id,
+  isTabActive,
+  isLoading,
+  axios,
+]);
+
 
   const toggleComplete = async (moduleId) => {
     try {

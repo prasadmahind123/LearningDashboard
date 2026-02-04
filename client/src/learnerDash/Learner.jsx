@@ -42,7 +42,7 @@ export default function LearnerLayout() {
     { name: "Dashboard", path: "/learner", icon: LayoutDashboard },
     { name: "My Learning Paths", path: "/learner/my-courses", icon: BookOpen },
     { name: "Progress Analytics", path: "/learner/progress", icon: BarChart3 },
-    { name: "Browse New Paths", path: "/courses", icon: Search },
+    { name: "Browse New Paths", path: "/join", icon: Search },
     { name: "Profile Settings", path: "/learner/update-profile", icon: User },
   ];
 

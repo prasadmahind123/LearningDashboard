@@ -21,7 +21,7 @@ export default function Header() {
     },
     {
       name: "learning paths",
-      link: "/courses",
+      link: "/join",
     },
     {
       name: "Contact",

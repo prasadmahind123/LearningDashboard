@@ -12,14 +12,22 @@ import { motion } from "framer-motion"
 
 export default function Login() {
 
-  const { navigate, axios, setUserRole, userRole } = useAppContext()
+  const { 
+    navigate, 
+    axios, 
+    setUserRole, 
+    userRole, 
+    setTeacher, 
+    setLearner, 
+    setIsAuthenticated 
+  } = useAppContext()
   const [showPassword, setShowPassword] = useState(false)
   const [userType, setUserType] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleLogin = async (e) => {
+ const handleLogin = async (e) => {
     e.preventDefault();
     
     if (!userType) {
@@ -32,22 +40,28 @@ export default function Login() {
       const { data } = await axios.post(`/api/${userType}/login`, { email, password });
 
       if (data.success) {
+        // ✅ 2. Update Context State IMMEDIATELY
+        setIsAuthenticated(true);
+        setUserRole(userType);
+
         if (userType === "teacher") {
           if (data.teacher.status === "approved") {
-            setUserRole(userType);
+            setTeacher(data.teacher); // <--- Update Teacher Data
             navigate("/teacher");
             toast.success("Welcome back, Instructor!");
           } else {
             toast.error("Your account is pending admin approval.");
+            setIsAuthenticated(false); // Reset if not approved
           }
         } else {
-          // learners and admins don't have approval status
-          setUserRole(userType);
+          // Handle Learner/Admin
           if (userType === "learner") {
+            setLearner(data.learner); // <--- Update Learner Data
             navigate("/learner");
             toast.success("Welcome back!");
           }
           else if (userType === "admin") {
+            
             navigate("/admin");
             toast.success("Welcome back, Admin.");
           }
@@ -57,17 +71,7 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Login error:", error);
-      if (error.response) {
-        if (error.response.status === 403) {
-          toast.error("Your account is not approved yet. Please wait for admin approval.");
-        } else if (error.response.status === 401) {
-          toast.error("Invalid email or password.");
-        } else {
-          toast.error(error.response.data.message || "An error occurred during login");
-        }
-      } else {
-        toast.error("Network error. Please check your connection.");
-      }
+      // ... error handling ...
     } finally {
         setIsLoading(false);
     }

@@ -42,8 +42,8 @@ function App() {
       <div>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/courses" element={<CoursesPage />} />
-          <Route path="/courses/learning-path/:id" element={<CourseID />} />
+          <Route path="/join" element={<CoursesPage />} />
+          <Route path="/join/learning-path/:id" element={<CourseID />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -65,7 +65,7 @@ function App() {
           <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><Admin /></ProtectedRoute>} />
         </Routes>
       </div>
-      {!hideNavFooter && <Footer />}
+      {/* {!hideNavFooter && <Footer />} */}
       <ChatBot />
     </div>
   );

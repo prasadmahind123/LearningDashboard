@@ -288,7 +288,7 @@ export default function MyCourses() {
 
                       <CardFooter className="pt-0 pb-4">
                         <Button className="w-full rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 group/btn transition-all" asChild>
-                          <Link to={`/courses/learning-path/${course._id}`}>
+                          <Link to={`/mycourses/${course._id}`}>
                             <span className="mr-2">Continue Path</span>
                             <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                           </Link>

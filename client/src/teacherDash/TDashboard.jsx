@@ -50,6 +50,9 @@ const initialcourseFormState = {
   code: "",
   isPrivate: false,
   image: null,
+  skills: [
+    { name: "", points: 10 }
+  ],
   learningPath: [
     {
       title: "",
@@ -88,6 +91,9 @@ export default function TDashboard() {
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+  useEffect(() => {
+    document.title = "Dashboard - Teacher Portal";
+  }, []);
   // Sync teacher paths
   useEffect(() => {
     if (!teacher?.createdPaths?.length || !paths?.length) return;
@@ -286,6 +292,12 @@ export default function TDashboard() {
           }
         });
       });
+      const filteredSkills = courseForm.skills.filter(
+        s => s.name.trim() && s.points > 0
+      );
+
+      formData.append("skills", JSON.stringify(filteredSkills));
+
 
       const response = await axios.post('/api/learningpaths/addpath', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -708,6 +720,76 @@ export default function TDashboard() {
                           placeholder="Enter course code"
                         />
                       </div>
+                      {/* 🧠 Skills Section */}
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-lg font-semibold">Skills Covered</Label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setcourseForm(prev => ({
+                                  ...prev,
+                                  skills: [...prev.skills, { name: "", points: 10 }]
+                                }))
+                              }
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add Skill
+                            </Button>
+                          </div>
+
+                          <div className="space-y-3">
+                            {courseForm.skills.map((skill, index) => (
+                              <div key={index} className="flex gap-3 items-center w-96">
+                                <Input
+                                  placeholder="Skill name (e.g. React, Communication)"
+                                  value={skill.name}
+                                  onChange={(e) => {
+                                    const updated = [...courseForm.skills];
+                                    updated[index].name = e.target.value;
+                                    setcourseForm(prev => ({ ...prev, skills: updated }));
+                                  }}
+                                />
+
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={100}
+                                  placeholder="Points"
+                                  value={skill.points}
+                                  onChange={(e) => {
+                                    const updated = [...courseForm.skills];
+                                    updated[index].points = Number(e.target.value);
+                                    setcourseForm(prev => ({ ...prev, skills: updated }));
+                                  }}
+                                  className="w-28"
+                                />
+
+                                {courseForm.skills.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setcourseForm(prev => ({
+                                        ...prev,
+                                        skills: prev.skills.filter((_, i) => i !== index)
+                                      }));
+                                    }}
+                                  >
+                                    ✕
+                                  </Button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+
+                          <p className="text-xs text-muted-foreground">
+                            Points define how strongly this course contributes to each skill (used in radar chart).
+                          </p>
+                        </div>
+
 
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">

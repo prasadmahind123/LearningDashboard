@@ -86,20 +86,13 @@ export default function Home() {
               className="w-full sm:w-auto rounded-full h-12 md:h-14 px-6 md:px-8 text-base md:text-lg border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-black/50 backdrop-blur-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               asChild
             >
-              <NavLink to="/courses" className="flex items-center justify-center gap-2">
-                Browse Paths <Search className="w-4 h-4" />
+              <NavLink to={learner ? "/join" : "/login"} className="flex items-center justify-center gap-2">
+                {learner ? "Join Path" : "Login"} 
               </NavLink>
             </Button>
           </div>
         </motion.div>
       </BackgroundLines>
-
-      {/* Stats Section */}
-      <div className="relative z-10 -mt-20 pb-20 px-4">
-        <div className="container mx-auto">
-          <AnimatedStatsCards />
-        </div>
-      </div>
 
       {/* Features Grid */}
       <section className="py-24 bg-slate-50 dark:bg-slate-950/50 border-y border-slate-100 dark:border-slate-800">
@@ -193,13 +186,13 @@ export default function Home() {
       <ChatBot />
 
       {/* Infinite Scroll Section */}
-      <section className="py-10 bg-slate-900 text-white overflow-hidden w-full h-fit">
+      {/* <section className="py-10 bg-slate-900 text-white overflow-hidden w-full h-fit">
         <div className="container mx-auto px-4 mb-10 text-center">
           <h2 className="text-3xl font-bold mb-4">Explore Popular Paths</h2>
           <p className="text-slate-400">Join thousands of learners mastering these skills.</p>
         </div>
         <MovingCards />
-      </section>
+      </section> */}
 
       {/* CTA Section */}
       {

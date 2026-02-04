@@ -20,6 +20,15 @@ import { Badge } from "@/components/ui/badge"
 import { useAppContext } from "../context/AppContext.jsx"
 import { Link } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
+import { 
+  Radar, 
+  RadarChart, 
+  PolarGrid, 
+  PolarAngleAxis, 
+  PolarRadiusAxis, 
+  ResponsiveContainer 
+} from 'recharts';
+
 // Animation Variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -40,13 +49,34 @@ const itemVariants = {
 
 
 export default function Dashboard() {
-  const {  learner, paths } = useAppContext();
+  const {  learner, paths , axios} = useAppContext();
   const [loading, setLoading] = useState(false)
-
+  const [skillData, setSkillData] = useState([]);
   const [selectedcourse, setSelectedcourse] = useState(null)
   const [learnerPaths, setLearnerPaths] = useState(learner?.enrolledPaths || []);
 
+  useEffect(() => {
+    document.title = "Dashboard - Learner Portal";
+  }, []);
 
+
+useEffect(() => {
+  const fetchStats = async () => {
+    const learnerId = learner?._id || learner?.id || learner?.user?._id;
+    if (!learnerId) return;
+
+    console.log("Fetching stats for learner:", learnerId);
+
+    try {
+      const res = await axios.get(`/api/learner/stats/${learnerId}`);
+      setSkillData(res.data.skillProfile || []);
+    } catch (err) {
+      console.error("Failed to fetch stats", err);
+    }
+  };
+
+  fetchStats();
+}, [learner]);
 
 
   useEffect(() => {
@@ -108,10 +138,17 @@ export default function Dashboard() {
   //   return "I understand you're asking about our learning platform. I can help with course navigation, progress tracking, certificates, study tips, and platform features. Could you be more specific about what you'd like to know?"
   // }
 
-  const hoursLearned = learner?.totalLearningHours || 0; 
-  const eligibleCertificates = learnerPaths.filter(
-    (c) => (c.enrollment?.progressPercent || 0) >= 90
-  ).length;
+  const hoursLearned = learnerPaths.reduce((total, path) => {
+    const pathHours = path.enrollment?.timeSpent || 0;
+    return total + pathHours;
+  }, 0);
+  
+  const eligibleCertificates = learnerPaths.reduce((count, path) => {
+    if (path.enrollment?.progressPercent >= 90) {
+      return count + 1;
+    }
+    return count;
+  }, 0);
 
   return (
     <div className="no-scrollbar flex-1 h-[95vh] overflow-y-scroll flex flex-col bg-slate-50/50 dark:bg-slate-950">
@@ -172,7 +209,9 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-slate-800 dark:text-slate-100">{hoursLearned.toFixed(1)}</div>
+                <div className="text-3xl font-bold text-slate-800 dark:text-slate-100">
+                  {learner.totalLearningHours.toFixed(1) || 0}
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Keep the streak alive!</p>
               </CardContent>
             </Card>
@@ -250,12 +289,12 @@ export default function Dashboard() {
                         </div>
 
                         <div className="flex md:flex-col gap-2 w-full md:w-auto mt-2 md:mt-0">
-                        <Link to={`/courses/learning-path/${course._id}`} className="flex-1">
+                        {/* <Link to={`/courses/learning-path/${course._id}`} className="flex-1">
                             <Button size="sm" variant="ghost" className="w-full justify-start md:justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => setSelectedcourse(course)}>
                             <Eye className="h-4 w-4 mr-2" />
                             Details
                             </Button>
-                        </Link>
+                        </Link> */}
                         
                         <Link to={`/mycourses/${course._id}`} className="flex-1">
                             <Button size="sm" className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 shadow-md transition-transform active:scale-95">
@@ -273,6 +312,38 @@ export default function Dashboard() {
 
           {/* Sidebar: Weekly Goals */}
           <motion.div className="space-y-6" variants={itemVariants}>
+            {/* ✅ NEW: SKILL RADAR CHART CARD */}
+        <Card className="shadow-md border-0 bg-white dark:bg-slate-900">
+          <CardHeader>
+            <CardTitle className="flex items-center text-slate-700 dark:text-slate-200">
+              <Target className="h-5 w-5 mr-2 text-blue-500" />
+              Skill Competency
+            </CardTitle>
+            <CardDescription>Your growth across different domains</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={skillData}>
+                  <PolarGrid stroke="#e2e8f0" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                  <Radar
+                    name="My Skills"
+                    dataKey="A"
+                    stroke="#8884d8"
+                    strokeWidth={2}
+                    fill="#8884d8"
+                    fillOpacity={0.5}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-center text-xs text-muted-foreground mt-2">
+              Based on course progress and quiz results.
+            </p>
+          </CardContent>
+        </Card>
             <Card className="shadow-md border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950">
               <CardHeader>
                 <CardTitle className="flex items-center text-slate-700 dark:text-slate-200">

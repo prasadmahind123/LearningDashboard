@@ -12,6 +12,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress as ProgressBar } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/Loader";
+import { 
+  Radar, 
+  RadarChart, 
+  PolarGrid, 
+  PolarAngleAxis, 
+  PolarRadiusAxis,
+  Tooltip  
+} from 'recharts';
+
 
 // --- Animation Variants ---
 const containerVariants = {
@@ -32,6 +41,11 @@ export default function Progress() {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
   const [activityData, setActivityData] = useState([]);
+  const [skillData, setSkillData] = useState([]);
+  const [animatedSkillData, setAnimatedSkillData] = useState([]);
+  const [badges, setBadges] = useState([]);
+
+
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -71,6 +85,58 @@ export default function Progress() {
     fetchStats();
   }, [learner, axios]);
 
+  useEffect(() => {
+  const fetchStats = async () => {
+    const learnerId = learner?._id || learner?.id || learner?.user?._id;
+    if (!learnerId) return;
+
+    try {
+      const res = await axios.get(`/api/learner/stats/${learnerId}`);
+      if (res.data.skillProfile) {
+        setSkillData(res.data.skillProfile);
+    }
+
+    if (res.data.badges) {
+        setBadges(res.data.badges);
+    }
+
+      
+    } catch (err) {
+      console.error("Failed to fetch stats", err);
+    }
+  };
+
+  fetchStats();
+}, [learner]);
+
+useEffect(() => {
+  if (!skillData.length) return;
+
+  let step = 0;
+  const steps = 30; // animation smoothness
+  const interval = setInterval(() => {
+    step++;
+
+    setAnimatedSkillData(prev =>
+      prev.map((skill, index) => {
+        const target = skillData[index].A;
+        return {
+          ...skill,
+          A: Math.round((target / steps) * step)
+        };
+      })
+    );
+
+    if (step >= steps) {
+      clearInterval(interval);
+      setAnimatedSkillData(skillData); // ensure exact final values
+    }
+  }, 40); // speed (ms)
+
+  return () => clearInterval(interval);
+}, [skillData]);
+
+
   // --- Deduplicated Course Data ---
   const enrolledCoursesData = useMemo(() => {
     if (!learner?.enrolledPaths || !paths.length) return [];
@@ -97,6 +163,7 @@ export default function Progress() {
   const overallProgress = enrolledCoursesData.length > 0 
     ? enrolledCoursesData.reduce((acc, curr) => acc + (curr.progressPercent || 0), 0) / enrolledCoursesData.length
     : 0;
+
 
   if (loading) {
       return (
@@ -137,7 +204,7 @@ export default function Progress() {
         <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatsCard 
                 title="Total Hours" 
-                value={stats?.totalLearningHours?.toFixed(1) || 0} 
+                value={learner.totalLearningHours.toFixed(1) || 0} 
                 subtitle="Lifetime learning"
                 icon={Clock} 
                 color="text-blue-600" 
@@ -173,48 +240,77 @@ export default function Progress() {
             
             {/* Main Chart: Learning Activity */}
             <motion.div variants={itemVariants} className="lg:col-span-2">
-                <Card className="h-full border-none shadow-md bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
-                    <CardHeader>
-                        <CardTitle>Weekly Activity</CardTitle>
-                        <CardDescription>Hours spent learning over the last 7 days</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={activityData}>
-                                <defs>
-                                    <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                <XAxis 
-                                    dataKey="name" 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{fontSize: 12, fill: '#64748b'}} 
-                                    dy={10}
-                                />
-                                <YAxis 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{fontSize: 12, fill: '#64748b'}} 
-                                />
-                                <RechartsTooltip 
-                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                                />
-                                <Area 
-                                    type="monotone" 
-                                    dataKey="hours" 
-                                    stroke="#3b82f6" 
-                                    strokeWidth={3}
-                                    fillOpacity={1} 
-                                    fill="url(#colorHours)" 
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
+                 {/* ✅ NEW: SKILL RADAR CHART CARD */}
+        <Card className="shadow-md border-0 bg-white dark:bg-slate-900">
+          <CardHeader>
+            <CardTitle className="flex items-center text-slate-700 dark:text-slate-200">
+              <Target className="h-5 w-5 mr-2 text-blue-500" />
+              Skill Competency
+            </CardTitle>
+            <CardDescription>Your growth across different domains</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={animatedSkillData}>
+                    <PolarGrid stroke="#e2e8f0" />
+
+                    <PolarAngleAxis
+                        dataKey="subject"
+                        tick={{ fill: '#64748b', fontSize: 12, fontWeight: 500 }}
+                    />
+
+                    <PolarRadiusAxis
+                        angle={30}
+                        domain={[0, 'dataMax']}
+                        tick={{ fill: '#94a3b8', fontSize: 10 }}
+                        axisLine={false}
+                    />
+
+                    <Tooltip
+                        formatter={(value) => [`${value} points`, "Earned"]}
+                        labelFormatter={(label) => `Skill: ${label}`}
+                    />
+
+                    <Radar
+                        dataKey="A"
+                        stroke="#6366f1"
+                        strokeWidth={2}
+                        fill="#6366f1"
+                        fillOpacity={0.5}
+                        isAnimationActive={true}
+                        animationDuration={1200}
+                        animationEasing="ease-out"
+                        />
+
+                    </RadarChart>
+
+              </ResponsiveContainer>
+            </div>
+            <p className="text-center text-xs text-muted-foreground mt-2">
+              Based on course progress and quiz results.
+            </p>
+          </CardContent>
+          <Card>
+            <CardHeader>
+                <CardTitle>Achievements</CardTitle>
+                <CardDescription>Unlocked based on your learning habits</CardDescription>
+            </CardHeader>
+
+            <CardContent className="flex gap-3 flex-wrap">
+                {badges.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No badges yet. Keep learning!</p>
+                ) : (
+                badges.map((badge, i) => (
+                    <Badge key={i} className="text-sm px-3 py-1">
+                    {badge.icon} {badge.title}
+                    </Badge>
+                ))
+                )}
+            </CardContent>
+            </Card>
+
+        </Card>
             </motion.div>
 
             {/* Streak & Motivation */}
