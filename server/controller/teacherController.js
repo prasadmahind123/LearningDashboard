@@ -15,8 +15,8 @@ const sendTeacherToken = (teacher, res) => {
 
     res.cookie("teacherToken", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite:  'lax',
+      secure: true,
+      sameSite:  'none',
       maxAge: 24 * 60 * 60 * 1000,
     });
 
@@ -187,8 +187,8 @@ export const logoutTeacher = async (req, res) => {
   try {
     res.clearCookie("teacherToken", {
       httpOnly: true,
-      sameSite: "Lax",
-      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
+      secure: true,
     });
 
     return res.json({ success: true, message: "Teacher logged out successfully" });
