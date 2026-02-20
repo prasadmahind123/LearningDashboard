@@ -591,6 +591,9 @@ import {
   uploadImage,
   
 } from '../config/cloudinary.js';
+import XLSX from "xlsx";
+import bibtexParse from "bibtex-parse-js";
+import fs from "fs";
 
 
 
@@ -599,11 +602,11 @@ export const createLearningPath = async (req, res) => {
     const {
       title,
       description,
-      isPrivate,
+      // isPrivate,
       code,
       learners,
       category,
-      price,
+      // price,
       level,
       duration,
       content,
@@ -700,11 +703,11 @@ export const createLearningPath = async (req, res) => {
       title,
       description,
       category,
-      price,
+      // price,
       level,
       duration,
       image, // ✅ Now properly stored
-      isPrivate: isPrivate || false,
+      //isPrivate: isPrivate || false,
       learners: learners || [],
       skills: parsedSkills || [],
       code: code || "",
@@ -831,7 +834,7 @@ export const updateLearningPath = async (req, res) => {
     path.title = title || path.title;
     path.description = description || path.description;
     path.category = category || path.category;
-    path.price = price || path.price;
+    // path.price = price || path.price;
     path.level = level || path.level;
     path.duration = duration || path.duration;
 
@@ -1029,5 +1032,119 @@ export const deleteModuleResource = async (req, res) => {
   } catch (error) {
     console.error("Error deleting resource:", error);
     res.status(500).json({ success: false, message: "Server error while deleting resource" });
+  }
+};
+
+// 🧠 Import learning path from Excel
+export const importLearningPathFromExcel = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const workbook = XLSX.readFile(req.file.path);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+    const rows = XLSX.utils.sheet_to_json(sheet);
+
+
+    const modulesMap = {};
+
+    rows.forEach((row) => {
+      const moduleName = row.Module?.trim();
+      const type = row.Type?.trim() || "video";
+      const url = row.URL?.trim();
+
+      if (!moduleName) return;
+
+      if (!modulesMap[moduleName]) {
+        modulesMap[moduleName] = {
+          title: moduleName,
+          description: "",
+          duration: "",
+          type,
+          urls: [],
+          files: {
+            documents: [],
+            video: null,
+            pdf: null,
+            bibtex: null,
+            excel: null,
+            additionalFiles: [],
+          },
+        };
+      }
+
+      if (url) {
+        modulesMap[moduleName].urls.push(url);
+      }
+    });
+
+    const modules = Object.values(modulesMap).map((module) => ({
+      title: module.title || "",
+      description: module.description,
+      duration: module.duration,
+      type: module.type,
+
+      // ✅ EXACT FORMAT YOUR FORM EXPECTS
+      urls: module.urls.length ? module.urls : [""],
+
+      files: module.files,
+    }));
+
+    fs.unlinkSync(req.file.path);
+
+    res.json({ modules });
+
+  } catch (err) {
+    console.error("Excel import error:", err);
+    res.status(500).json({ error: "Excel parsing failed" });
+  }
+};
+
+
+export const importLearningPathFromBibtex = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const bibtexContent = fs.readFileSync(req.file.path, "utf8");
+
+    const entries = bibtexParse.toJSON(bibtexContent);
+
+    console.log("Parsed BibTeX entries:", entries);
+
+    const modules = entries.map((entry) => {
+      const tags = entry.entryTags || {};
+
+      const title = tags.title || "Untitled Resource";
+      const url = tags.url || tags.link || "";
+
+      return {
+        title,                      // 👈 Module Title
+        description: `${tags.author || ""} ${tags.year ? `(${tags.year})` : ""}`,
+        duration: "",
+        type: "reading",            // BibTeX usually papers/articles
+        urls: url ? [url] : [""],
+
+        files: {
+          documents: [],
+          video: null,
+          pdf: null,
+          bibtex: null,
+          excel: null,
+          additionalFiles: [],
+        },
+      };
+    });
+
+    fs.unlinkSync(req.file.path);
+
+    res.json({ modules });
+
+  } catch (err) {
+    console.error("BibTeX import error:", err);
+    res.status(500).json({ error: "BibTeX parsing failed" });
   }
 };

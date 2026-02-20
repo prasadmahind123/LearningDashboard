@@ -21,10 +21,11 @@ import {
 } from "@/components/ui/dialog"
 import {
   BookOpen, Users, DollarSign, TrendingUp, Plus, Eye, Edit, X,
-  Minus, MoreHorizontal, Calendar, Star, Crown, CreditCard, CheckCircle2
+  Minus, MoreHorizontal, Calendar, Star, Crown, CreditCard, CheckCircle2 , Sparkles
 } from "lucide-react"
 import { Separator } from "@/components/ui/separator.jsx";
 import { motion, AnimatePresence } from "framer-motion";
+
 
 // --- Animation Variants ---
 const containerVariants = {
@@ -45,10 +46,10 @@ const initialcourseFormState = {
   description: "",
   category: "",
   level: "",
-  price: "",
+  // price: "",
   duration: "",
   code: "",
-  isPrivate: false,
+  // isPrivate: false,
   image: null,
   skills: [
     { name: "", points: 10 }
@@ -57,6 +58,7 @@ const initialcourseFormState = {
     {
       title: "",
       description: "",
+      modules: [],
       duration: "",
       type: "video",
       urls: [""],
@@ -121,11 +123,10 @@ export default function TDashboard() {
     setIsViewcourseOpen(true);
   };
 
-  const copyLink = async () => {
+  const copyLink =  (code) => {
     try {
-      const url = `${window.location.origin}/courses/learning-path/${viewingcourse?._id}`;
-      await navigator.clipboard.writeText(url);
-      alert("Link copied to clipboard");
+      navigator.clipboard.writeText(code);
+      toast.success("Link copied to clipboard!"); 
     } catch (err) {
       console.error("Failed to copy link", err);
     }
@@ -209,7 +210,7 @@ export default function TDashboard() {
       description: editPath.description || "",
       category: editPath.category,
       level: editPath.level,
-      price: editPath.price,
+      // price: editPath.price,
       duration: editPath.duration,
       code: editPath.code || "",
       learningPath: normalizedLearningPath.length ? normalizedLearningPath : [
@@ -241,9 +242,9 @@ export default function TDashboard() {
       formData.append('description', courseForm.description || "");
       formData.append('category', courseForm.category || "");
       formData.append('level', courseForm.level || "");
-      formData.append('price', courseForm.price || 0);
+      // formData.append('price', courseForm.price || 0);
       formData.append('duration', courseForm.duration || "");
-      formData.append('isPrivate', courseForm.isPrivate ? "true" : "false");
+      // formData.append('isPrivate', courseForm.isPrivate ? "true" : "false");
       formData.append('code', courseForm.code || "");
 
       const imageInput = document.getElementById('image');
@@ -359,7 +360,7 @@ export default function TDashboard() {
       formData.append("description", editcourseForm.description || "");
       formData.append("category", editcourseForm.category || "");
       formData.append("level", editcourseForm.level || "");
-      formData.append("price", editcourseForm.price || 0);
+      // formData.append("price", editcourseForm.price || 0);
       formData.append("duration", editcourseForm.duration || "");
       if (editcourseForm.code && editcourseForm.code.trim() !== editingcourse.code) {
         formData.append("code", editcourseForm.code.trim());
@@ -545,6 +546,59 @@ export default function TDashboard() {
       </CardContent>
     </Card>
   );
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  const handleGenerateCode = () => {
+    // Trigger a brief animation state
+    setIsAnimating(true);
+    
+    const generatedCode = Math.random()
+      .toString(36)
+      .substring(2, 10)
+      .toUpperCase();
+
+    setcourseForm((prev) => ({
+      ...prev,
+      code: generatedCode,
+    }));
+
+    // Reset animation after 500ms
+    setTimeout(() => setIsAnimating(false), 500);
+  };
+
+const handleExcelUpload = async (file) => {
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const { data } = await axios.post("/api/learningpaths/import", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    withCredentials: true,
+  });
+
+  setcourseForm(prev => ({
+    ...prev,
+    learningPath: data.modules,
+  }));
+};
+
+const handleBibtexUpload = async (file) => {
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const { data } = await axios.post("/api/learningpaths/import-bibtex", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    withCredentials: true,
+  });
+
+  setcourseForm(prev => ({
+    ...prev,
+    learningPath: data.modules,
+  }));
+};
 
   return (
     <div className="flex-1 h-screen overflow-y-auto no-scrollbar bg-slate-50/50 dark:bg-slate-950 p-6 md:p-8">
@@ -588,7 +642,16 @@ export default function TDashboard() {
                     <Plus className="mr-2 h-5 w-5" />
                     Create New Path
                 </Button>
+                
                 </DialogTrigger>
+                {
+                  !isSubscribed && (
+                    <Button onClick = {()=> setIsSubscriptionModalOpen(true)} size="lg" className="bg-blue-600 hover:bg-blue-700 shadow-md">
+                      <Crown className="mr-2 h-5 w-5" />
+                      get Premium
+                    </Button>
+                  )
+                }
                 
                 {/* ORIGINAL CREATE DIALOG CONTENT */}
                 <DialogContent className="max-w-full max-h-[90vh] overflow-y-auto">
@@ -596,7 +659,34 @@ export default function TDashboard() {
                     <DialogTitle>Create New learning path</DialogTitle>
                     <DialogDescription>Create a comprehensive learning path</DialogDescription>
                   </DialogHeader>
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="space-y-3">
+                      <Label>Import Modules from Excel</Label>
 
+                      <Input
+                        type="file"
+                        accept=".xlsx"
+                        onChange={(e) => handleExcelUpload(e.target.files[0])}
+                      />
+
+                      <p className="text-sm text-muted-foreground">
+                        Upload Excel file to auto-create modules & resources
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <Label>Import Modules from bibtex</Label>
+
+                      <Input
+                        type="file"
+                        accept=".bib,.bibtex"
+                        onChange={(e) => handleBibtexUpload(e.target.files[0])}
+                      />
+
+                      <p className="text-sm text-muted-foreground">
+                        Upload .bibtex file to auto-create modules & resources
+                      </p>
+                    </div>
+                  </div>
                   <div className="grid gap-6 py-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -635,6 +725,7 @@ export default function TDashboard() {
                         </Select>
                       </div>
                     </div>
+                    
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -645,7 +736,7 @@ export default function TDashboard() {
                         onChange={(e) => setcourseForm((prev) => ({ ...prev, image: e.target.value }))}
                         />
                       </div>
-                          <div className="space-y-2">
+                          {/* <div className="space-y-2">
                           <Label htmlFor="isPrivate">isPrivate</Label>
                           <Select
                             value={courseForm.isPrivate ? "true" : "false"}
@@ -659,7 +750,7 @@ export default function TDashboard() {
                               <SelectItem value="false">No </SelectItem>
                             </SelectContent>
                           </Select>
-                      </div>
+                      </div> */}
                     </div>
                     
                     <div className="space-y-2">
@@ -690,7 +781,7 @@ export default function TDashboard() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
+                      {/* <div className="space-y-2">
                         <Label htmlFor="price">Price ($)</Label>
                         <Input
                           id="price"
@@ -699,7 +790,7 @@ export default function TDashboard() {
                           onChange={(e) => setcourseForm((prev) => ({ ...prev, price: e.target.value }))}
                           placeholder="99.99"
                         />
-                      </div>
+                      </div> */}
                       <div className="space-y-2">
                         <Label htmlFor="duration">Total Duration</Label>
                         <Input
@@ -710,24 +801,47 @@ export default function TDashboard() {
                         />
                       </div>
                     </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-5 sm:items-center">
+                      <div className="col-span-1 space-y-3 sm:col-span-3">
+                        <Label htmlFor="code">Learning path code (free access)</Label>
 
-                      <div className="space-y-3 w-fit">
-                        <Label htmlFor="code">learning path Code to free access</Label>
                         <Input
                           id="code"
                           value={courseForm.code}
-                          onChange={(e) => setcourseForm((prev) => ({ ...prev, code: e.target.value }))}
+                          onChange={(e) =>
+                            setcourseForm((prev) => ({
+                              ...prev,
+                              code: e.target.value,
+                            }))
+                          }
                           placeholder="Enter course code"
                         />
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={handleGenerateCode}
+                        className="group relative col-span-1 flex w-full items-center justify-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all duration-200 active:scale-95 shadow-md hover:shadow-indigo-200 cursor-pointer sm:col-span-2 sm:w-auto"
+                      >
+                        <Sparkles 
+                          className={`w-4 h-4 transition-transform duration-500 ${isAnimating ? 'rotate-180 scale-125' : 'group-hover:rotate-12'}`} 
+                        />
+                        <span className="whitespace-nowrap">Generate</span>
+                        
+                        {/* Subtle shine effect on hover */}
+                        <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
+                      </button>
+                    </div>
+
                       {/* 🧠 Skills Section */}
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <Label className="text-lg font-semibold">Skills Covered</Label>
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
+                              className="w-full sm:w-auto"
                               onClick={() =>
                                 setcourseForm(prev => ({
                                   ...prev,
@@ -742,7 +856,7 @@ export default function TDashboard() {
 
                           <div className="space-y-3">
                             {courseForm.skills.map((skill, index) => (
-                              <div key={index} className="flex gap-3 items-center w-96">
+                              <div key={index} className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:w-full">
                                 <Input
                                   placeholder="Skill name (e.g. React, Communication)"
                                   value={skill.name}
@@ -764,13 +878,14 @@ export default function TDashboard() {
                                     updated[index].points = Number(e.target.value);
                                     setcourseForm(prev => ({ ...prev, skills: updated }));
                                   }}
-                                  className="w-28"
+                                  className="w-full sm:w-28"
                                 />
 
                                 {courseForm.skills.length > 1 && (
                                   <Button
                                     type="button"
                                     variant="ghost"
+                                    className="w-full sm:w-auto"
                                     onClick={() => {
                                       setcourseForm(prev => ({
                                         ...prev,
@@ -978,11 +1093,11 @@ export default function TDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatsCard title="Total Paths" value={teacher?.createdPaths.length || 0} icon={BookOpen} colorClass="#3b82f6" />
-            <StatsCard title="Total Revenue" value={`$${teacher?.revenue || 0}`} icon={DollarSign} colorClass="#22c55e" />
-            <StatsCard title="Active Courses" value={teacher?.createdPaths.length || 0} icon={TrendingUp} colorClass="#a855f7" />
-            <StatsCard title="Students" value={teacher?.enrolledStudents.length || 0} icon={Users} colorClass="#f59e0b" />
+            {/* <StatsCard title="Total Revenue" value={`$${teacher?.revenue || 0}`} icon={DollarSign} colorClass="#22c55e" /> */}
+            <StatsCard title="Active Courses" value={teacher?.createdPaths?.length || 0} icon={TrendingUp} colorClass="#a855f7" />
+            <StatsCard title="Students" value={teacher?.enrolledStudents?.length || 0} icon={Users} colorClass="#f59e0b" />
         </motion.div>
 
         {/* Course List */}
@@ -1011,9 +1126,9 @@ export default function TDashboard() {
                                     
                                     <div className="flex-1 min-w-0 space-y-1.5">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <Badge variant={course.isPrivate ? "secondary" : "default"} className="text-[10px] uppercase tracking-wider px-2 py-0.5">
+                                            {/* <Badge variant={course.isPrivate ? "secondary" : "default"} className="text-[10px] uppercase tracking-wider px-2 py-0.5">
                                                 {course.isPrivate ? "Private" : "Public"}
-                                            </Badge>
+                                            </Badge> */}
                                             <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                 <Calendar className="h-3 w-3" /> {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : 'N/A'}
                                             </span>
@@ -1025,10 +1140,10 @@ export default function TDashboard() {
                                                 <Users className="h-3.5 w-3.5 text-blue-500" /> 
                                                 <span className="font-semibold text-slate-700 dark:text-slate-300">{course.learners?.length || 0}</span> students
                                             </span>
-                                            <span className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-md">
+                                            {/* <span className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-md">
                                                 <DollarSign className="h-3.5 w-3.5 text-green-500" /> 
                                                 <span className="font-semibold text-slate-700 dark:text-slate-300">${course.revenue || 0}</span>
-                                            </span>
+                                            </span> */}
                                             <span className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-md">
                                                 <Star className="h-3.5 w-3.5 text-yellow-500" /> 
                                                 <span className="font-semibold text-slate-700 dark:text-slate-300">{course.rating || 0}</span>
@@ -1177,7 +1292,7 @@ export default function TDashboard() {
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="edit-price">Price ($)</Label>
                 <Input
                   id="edit-price"
@@ -1186,7 +1301,7 @@ export default function TDashboard() {
                   onChange={(e) => setEditcourseForm((prev) => ({ ...prev, price: e.target.value }))}
                   placeholder="99.99"
                 />
-              </div>
+              </div> */}
               <div className="space-y-2">
                 <Label htmlFor="edit-duration">Total Duration</Label>
                 <Input
@@ -1484,7 +1599,7 @@ export default function TDashboard() {
                   {viewingcourse?.description}
                 </DialogDescription>
                 <div className="mt-2 text-xs text-slate-400">
-                  {viewingcourse?.category} • {viewingcourse?.level} • {viewingcourse?.totalHours || 0} hrs
+                  {viewingcourse?.category} • {viewingcourse?.level} • {viewingcourse?.duration || 0} 
                 </div>
               </div>
             </div>
@@ -1566,13 +1681,13 @@ export default function TDashboard() {
                     <div><strong>Category:</strong> {viewingcourse?.category || "—"}</div>
                     <div><strong>Level:</strong> {viewingcourse?.level || "—"}</div>
                     <div><strong>Total Hours:</strong> {viewingcourse?.duration || 0}</div>
-                    <div><strong>Price:</strong> {viewingcourse?.price ? `$${viewingcourse.price}` : "Free"}</div>
+                    {/* <div><strong>Price:</strong> {viewingcourse?.price ? `$${viewingcourse.price}` : "Free"}</div> */}
                   </div>
                 </div>
 
                 <div className="mt-4 grid grid-cols-1 gap-2">
-                  <Button onClick={() => navigateToEdit(viewingcourse)} className="w-full">Edit Learning Path</Button>
-                  <Button variant="outline" className="w-full" onClick={copyLink}>Share / Copy Link</Button>
+                  <Button  onClick={() => handleEditcourse(viewingcourse._id)} className="w-full">Edit Learning Path</Button>
+                  <Button variant="outline" className="w-full" onClick={()=> copyLink(viewingcourse?.code)}>Share / Copy Link</Button>
                 </div>
               </Card>
             </aside>
