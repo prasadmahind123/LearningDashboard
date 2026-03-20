@@ -88,15 +88,6 @@ export default function TeachersTab({ searchQuery }) {
                     Review applications and manage {teachers.length} registered instructors.
                 </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="h-9 bg-white dark:bg-slate-950">
-                <Download className="h-4 w-4 mr-2 text-slate-500" />
-                Export
-              </Button>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
-                <RefreshCw className="h-4 w-4 text-slate-500" />
-              </Button>
-            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">

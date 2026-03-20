@@ -16,8 +16,8 @@ export const adminLogin = async (req, res) => {
         });
         res.cookie('adminToken', token, {
         httpOnly: true, // Cookie is not accessible via JavaScript
-        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production  
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict', // SameSite policy
+        secure: true, // Use secure cookies in production  
+        sameSite:  'none', // SameSite policy
         maxAge: 7 * 24 * 60 * 60 * 1000 // Cookie will expire in 30 days
     });
         return res.json({ success: true, message: "Admin logged in successfully" }); // Respond with success message
@@ -60,7 +60,12 @@ export const isAdminAuth = async (req, res) => {
 // Admin logout : /api/admin/logout
 export const adminLogout = async (req, res) => {
     try {
-        res.clearCookie('adminToken'); // Clear the admin token cookie
+        res.clearCookie('adminToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite:  'none' ,
+            path: '/' // Ensure the cookie is cleared for the correct path
+        }); // Clear the admin token cookie
         return res.json({ success: true, message: "Admin logged out successfully" }); // Respond with success message
     } catch (error) {
         console.error("Error logging out admin:", error); // Log error to console

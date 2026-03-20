@@ -11,6 +11,11 @@ import { useAppContext } from "@/context/AppContext"
 import toast, { Toaster } from "react-hot-toast"
 import { motion } from "framer-motion"
 
+const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
 export default function Register() {
   const { axios, setUserRole } = useAppContext()
   const navigate = useNavigate()
@@ -41,7 +46,7 @@ export default function Register() {
     setIsLoading(true)
 
     try {
-      const { password, confirmPassword, agreeToTerms } = formData
+      const { password, confirmPassword, agreeToTerms , email } = formData
 
       if (!userType) {
         toast.error("Please select a role (Student or Teacher)")
@@ -60,6 +65,12 @@ export default function Register() {
         setIsLoading(false)
         return
       }
+      if (!isValidEmail(email)) {
+      toast.error("Please enter a valid email address")
+      setIsLoading(false)
+      return
+    }
+
 
       const form = new FormData();
       form.append("fullName", formData.fullName);

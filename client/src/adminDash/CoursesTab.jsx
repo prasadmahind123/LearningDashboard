@@ -101,15 +101,7 @@ export default function CoursesTab({ searchQuery }) {
                     Monitor performance and manage content for {localPaths.length} active courses.
                 </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="h-9 bg-white dark:bg-slate-950">
-                <Download className="h-4 w-4 mr-2 text-slate-500" />
-                Export
-              </Button>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
-                <RefreshCw className="h-4 w-4 text-slate-500" />
-              </Button>
-            </div>
+
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -119,7 +111,6 @@ export default function CoursesTab({ searchQuery }) {
                 <TableHead className="pl-6">Course Details</TableHead>
                 <TableHead>Instructor</TableHead>
                 <TableHead>Performance</TableHead>
-                <TableHead>Financials</TableHead>
                 <TableHead className="text-right pr-6">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -183,24 +174,10 @@ export default function CoursesTab({ searchQuery }) {
                                         <Users className="h-3.5 w-3.5 text-blue-500" />
                                         {course.learners?.length || 0} Students
                                     </div>
-                                    <div className="flex items-center gap-1 text-xs font-medium text-slate-600 dark:text-slate-400">
-                                        <Star className="h-3.5 w-3.5 text-amber-500 fill-current" />
-                                        {course.rating || "0.0"} Rating
-                                    </div>
+
                                 </div>
                             </TableCell>
 
-                            <TableCell>
-                                <div className="space-y-1">
-                                    <div className="text-sm font-bold text-slate-900 dark:text-white">
-                                        ${course.price || "Free"}
-                                    </div>
-                                    <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                                        <DollarSign className="h-3 w-3" />
-                                        {course.revenue?.toLocaleString() || 0} Rev
-                                    </div>
-                                </div>
-                            </TableCell>
 
                             <TableCell className="text-right pr-6">
                                 <div className="flex justify-end items-center gap-2 opacity-90 group-hover:opacity-100 transition-opacity">
@@ -266,10 +243,6 @@ export default function CoursesTab({ searchQuery }) {
                             <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg">
                                 <p className="text-xs text-slate-500 uppercase tracking-wide">Students</p>
                                 <p className="text-lg font-bold text-blue-600">{selectedCourse.learners?.length || 0}</p>
-                            </div>
-                            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg">
-                                <p className="text-xs text-slate-500 uppercase tracking-wide">Revenue</p>
-                                <p className="text-lg font-bold text-green-600">${selectedCourse.revenue || 0}</p>
                             </div>
                             <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg">
                                 <p className="text-xs text-slate-500 uppercase tracking-wide">Price</p>

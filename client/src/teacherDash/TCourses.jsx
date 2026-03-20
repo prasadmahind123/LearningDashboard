@@ -188,11 +188,7 @@ export default function Tcourses() {
                                         alt={course.title}
                                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                     />
-                                    <div className="absolute top-3 right-3 flex gap-2">
-                                        <Badge variant={course.isPrivate ? "secondary" : "default"} className="shadow-sm backdrop-blur-md bg-opacity-90">
-                                            {course.isPrivate ? "Private" : "Public"}
-                                        </Badge>
-                                    </div>
+                    
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
                                         <div className="flex gap-2 w-full">
                                             <Button size="sm" variant="secondary" className="flex-1 bg-white/90 hover:bg-white text-slate-900" onClick={() => handleViewcourse(course._id)}>
@@ -207,10 +203,7 @@ export default function Tcourses() {
                                         <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-slate-500 border-slate-200">
                                             {course.category || "General"}
                                         </Badge>
-                                        <div className="flex items-center text-xs text-amber-500 font-medium">
-                                            <Star className="h-3 w-3 fill-current mr-1" />
-                                            {course.rating || "0.0"}
-                                        </div>
+                                    
                                     </div>
                                     <CardTitle className="text-lg line-clamp-1 group-hover:text-blue-600 transition-colors">
                                         {course.title}
@@ -234,9 +227,7 @@ export default function Tcourses() {
                                             <BarChart3 className="h-3.5 w-3.5" />
                                             {course.learners?.length || 0} Enrolled
                                         </div>
-                                        <div className="flex items-center gap-1.5 font-semibold text-green-600 dark:text-green-400">
-                                            ${course.revenue || 0} Earned
-                                        </div>
+   
                                     </div>
                                 </CardContent>
 
@@ -346,16 +337,8 @@ export default function Tcourses() {
 
                     <div className="space-y-4">
                         <div className="flex justify-between items-center py-2 border-b">
-                            <span className="text-sm text-slate-500">Price</span>
-                            <span className="font-bold text-lg">${viewingcourse?.price || 0}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b">
                             <span className="text-sm text-slate-500">Total Duration</span>
                             <span className="font-medium text-sm">{viewingcourse?.duration || "N/A"}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b">
-                            <span className="text-sm text-slate-500">Total Revenue</span>
-                            <span className="font-medium text-sm text-green-600">${viewingcourse?.revenue || 0}</span>
                         </div>
                     </div>
 

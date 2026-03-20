@@ -44,7 +44,7 @@ export default function TeacherLayout() {
     { name: "Dashboard", path: "/teacher", icon: LayoutDashboard },
     { name: "My Learning Paths", path: "/teacher/courses", icon: BookOpen },
     { name: "My Students", path: "/teacher/students", icon: Users },
-    { name: "Revenue Analytics", path: "/teacher/revenue", icon: DollarSign },
+    // { name: "Revenue Analytics", path: "/teacher/revenue", icon: DollarSign },
     { name: "Instructor Profile", path: "/teacher/update-profile", icon: User },
   ];
 

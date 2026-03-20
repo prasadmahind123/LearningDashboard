@@ -112,6 +112,7 @@ export default function TDashboard() {
   const usagePercent = Math.min((pathsCreatedCount / freePlanLimit) * 100, 100);
 
 
+
   // View course
   const handleViewcourse = (course) => {
     const foundCourse = paths.find((p) => p._id === course);

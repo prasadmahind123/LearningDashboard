@@ -49,7 +49,7 @@ export default function Home() {
     <div className="bg-background min-h-screen font-sans selection:bg-blue-100 dark:selection:bg-blue-900">
       
       {/* Hero Section with BackgroundLines */}
-      <BackgroundLines className="flex items-center justify-center w-full flex-col px-4 py-12 md:py-20 min-h-[80vh] md:h-[90vh]">
+      <BackgroundLines className="min-h-screen flex items-center justify-center w-full flex-col px-4 py-12 md:py-20  md:h-[90vh]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

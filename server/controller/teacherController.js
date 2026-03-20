@@ -124,6 +124,7 @@ export const loginTeacher = async (req, res) => {
         averageRating: teacher.averageRating,
         socialLinks: teacher.socialLinks,
         teachingStatus: teacher.teachingStatus,
+        isSubscribed: teacher.isSubscribed,
       },
     });
   } catch (error) {
@@ -173,6 +174,7 @@ export const isAuthTeacher = async (req, res) => {
         averageRating: teacher.averageRating,
         socialLinks: teacher.socialLinks,
         teachingStatus: teacher.teachingStatus,
+        isSubscribed: teacher.isSubscribed,
       },
     });
   } catch (error) {

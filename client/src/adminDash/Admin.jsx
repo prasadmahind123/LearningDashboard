@@ -69,7 +69,7 @@ export default function Admin() {
           {/* Sticky Tab List */}
           <motion.div variants={itemVariants} className="sticky top-20 z-30">
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-1 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto bg-transparent gap-2">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 h-auto bg-transparent gap-2">
                     <TabsTrigger 
                         value="learners" 
                         className="flex items-center gap-2 py-3 rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all duration-300"
@@ -91,7 +91,7 @@ export default function Admin() {
                         <BookOpen className="h-4 w-4" />
                         <span className="hidden sm:inline font-medium">Paths</span>
                     </TabsTrigger>
-                    <TabsTrigger 
+                    {/* <TabsTrigger 
                         value="content" 
                         className="flex items-center gap-2 py-3 rounded-xl data-[state=active]:bg-rose-600 data-[state=active]:text-white transition-all duration-300"
                     >
@@ -104,7 +104,7 @@ export default function Admin() {
                     >
                         <BarChart3 className="h-4 w-4" />
                         <span className="hidden sm:inline font-medium">Reports</span>
-                    </TabsTrigger>
+                    </TabsTrigger> */}
                 </TabsList>
             </div>
           </motion.div>

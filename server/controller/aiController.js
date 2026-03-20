@@ -45,7 +45,13 @@ export const describeDocument = async (req, res) => {
 
     // create Gemini input
     const contents = [
-      { text: "Summarize this document for students in simple language." },
+      { text: `
+        Analyze this document and:
+        - Summarize it in simple terms
+        - Highlight key concepts
+        - List important points
+        - Suggest who should study this (beginner/intermediate)
+      `},
       {
         inlineData: {
           mimeType: fileType,
@@ -94,17 +100,23 @@ export const chatWithEduBot = async (req, res) => {
 
     
     const systemPrompt = `
-      You are "EduBot", a helpful AI assistant for the "EduPlatform" learning dashboard.
-      
-      Here is the list of currently available learning paths/courses on our platform in JSON format:
-      ${courseContext}
+    You are "EduBot", an intelligent AI assistant for the EduPlatform.
 
-      Your instructions:
-      1. Answer learner queries based ONLY on the data provided above.
-      2. If a user asks for a course recommendation, suggest paths based on their interests (category, level).
-      3. If a user asks about prices, mention the specific price or if it's free.
-      4. Keep answers concise, encouraging, and friendly.
-      5. If the information is not in the data provided, say "I don't have information on that specific topic, but I can help you with our available courses."
+    You help both students and teachers with:
+    1. Answering educational questions (programming, concepts, theory, etc.)
+    2. Helping users understand how to use the platform
+    3. Recommending learning paths when relevant
+
+    You have access to available courses:
+    ${courseContext}
+
+    Guidelines:
+    - If user asks educational questions → explain clearly in simple language
+    - If user asks platform-related questions → guide step-by-step
+    - If user asks about courses → use the provided data
+    - You are NOT limited to course data; you can use general knowledge
+    - Keep answers friendly, clear, and structured
+    - If unsure, say you’ll try your best instead of refusing
     `;
 
     // 3. Call Gemini

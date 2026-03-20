@@ -210,7 +210,7 @@ useEffect(() => {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-slate-800 dark:text-slate-100">
-                  {learner.totalLearningHours.toFixed(1) || 0}
+                  {learner.totalLearningHours?.toFixed(1) || 0}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Keep the streak alive!</p>
               </CardContent>

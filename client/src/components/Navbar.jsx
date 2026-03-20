@@ -49,12 +49,16 @@ export default function Header() {
                         </>
                     ) : (
                         <>
-                            <button variant="ghost"  className='cursor-pointer bg-black rounded py-1 px-4 text-white'>
-                                <NavLink to="login">Login</NavLink>
-                            </button>
-                            <button variant="ghost"  className='cursor-pointer bg-black rounded py-1 px-4 text-white'>
-                                <NavLink to="register">Register</NavLink>
-                            </button>
+                            <NavLink to="login">
+                              <button variant="ghost"  className='cursor-pointer bg-black rounded py-1 px-4 text-white'>
+                                  Login
+                              </button>
+                            </NavLink>
+                            <NavLink to="register">
+                              <button variant="ghost"  className='cursor-pointer bg-black rounded py-1 px-4 text-white'>
+                                  Register
+                              </button>
+                            </NavLink>
                         </>
                     )
                 }
