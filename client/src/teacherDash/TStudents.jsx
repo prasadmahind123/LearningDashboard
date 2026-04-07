@@ -70,7 +70,7 @@ export default function TStudents() {
   })
 
   return (
-    <div className="flex-1 h-screen overflow-y-auto no-scrollbar bg-slate-50/50 dark:bg-slate-950 p-6 md:p-8">
+    <div className="flex-1 h-[90vh] overflow-y-auto bg-slate-50/50 dark:bg-slate-950 no-scrollbar">
       <motion.div 
         variants={containerVariants}
         initial="hidden"

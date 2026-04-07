@@ -142,7 +142,7 @@ export default function UpdateLearnerProfile() {
                         >
                             <Avatar className="h-32 w-32 border-4 border-white dark:border-slate-900 shadow-md">
                                 <AvatarFallback className="text-4xl bg-gradient-to-br from-slate-100 to-slate-300 text-slate-600">
-                                    {formData.fullName[0]}
+                                    {learner?.fullName?.split(" ").map(n => n[0]).join("") || "LP"}
                                 </AvatarFallback>
                             </Avatar>
                             <div className="absolute bottom-2 right-2 h-4 w-4 bg-green-500 border-2 border-white rounded-full"></div>
@@ -150,7 +150,7 @@ export default function UpdateLearnerProfile() {
 
                         <div className="flex-1 text-center md:text-left space-y-2 mb-2">
                             <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
-                                {formData.fullName}
+                                {learner?.fullName}
                             </h2>
                             <p className="text-slate-500 font-medium flex items-center justify-center md:justify-start gap-2">
                                 <GraduationCap className="h-4 w-4" />

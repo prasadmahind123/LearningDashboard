@@ -12,6 +12,8 @@ import adminRouter from './routes/adminRoute.js'; // Import admin
 import authRoute from './routes/authRoute.js'; // Import auth routes for password reset
 import aiRoute from './routes/aiRoute.js'
 import dotenv from 'dotenv';
+import paymentRoute from "./routes/paymentRoute.js";
+import { webhookHandler } from "./controller/paymentController.js";
 dotenv.config();
 
 import './config/passport.js'; // Ensure passport configuration is loaded
@@ -51,6 +53,9 @@ app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
+
+
+
 // Use the teacher routes
 app.use('/api/teacher', teacherRouter); // Use the teacher routes for all requests to /api/teacher
 // Use the learner routes
@@ -65,6 +70,12 @@ app.use('/api/learningpaths', learningPathRouter);
 app.use('/api/auth/forgot-password', authRoute); // Use the auth routes for password reset
 
 app.use("/api/ai", aiRoute);
+
+// 1. Webhook FIRST (needs raw body, before express.json parses it)
+app.post("/api/payment/webhook", express.raw({ type: "application/json" }), webhookHandler);
+
+// 2. All other payment routes (after express.json)
+app.use("/api/payment", paymentRoute);
 
 
 
