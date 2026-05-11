@@ -188,7 +188,7 @@ export default function TStudents() {
                             <TableCell>
                                 <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
                                 <Clock className="h-4 w-4 text-slate-400" />
-                                {student.totalLearningHours || 0}h
+                                {student.totalLearningHours?.toFixed(2) || 0}h
                                 </div>
                             </TableCell>
                             <TableCell>
@@ -240,7 +240,7 @@ export default function TStudents() {
                                                         <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-100 flex items-center gap-4">
                                                             <div className="p-3 bg-green-100 rounded-full text-green-600"><Clock className="h-5 w-5" /></div>
                                                             <div>
-                                                                <p className="text-2xl font-bold">{selectedStudent.totalLearningHours || 0}h</p>
+                                                                <p className="text-2xl font-bold">{selectedStudent.totalLearningHours.toFixed(2) || 0}h</p>
                                                                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Learned</p>
                                                             </div>
                                                         </div>

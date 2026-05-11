@@ -3417,7 +3417,7 @@ const handleBibtexUpload = async (file) => {
 
           <div className="mt-6 flex justify-end gap-3">
             <Button variant="ghost" onClick={() => setIsViewcourseOpen(false)}>Close</Button>
-            <Button onClick={() => navigateToEdit(viewingcourse)}>Edit</Button>
+            <Button onClick={() => handleEditcourse(viewingcourse._id)}>Edit</Button>
           </div>
         </DialogContent>
       </Dialog>

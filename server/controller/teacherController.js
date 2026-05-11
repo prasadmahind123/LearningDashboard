@@ -346,6 +346,7 @@ const toPublicTeacher = (t) => ({
   isSubscribed:    t.isSubscribed,
   subscriptionDate: t.subscriptionDate,
   availability:    t.availability,
+  resetOtpExpires: t.resetOtpExpires,
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

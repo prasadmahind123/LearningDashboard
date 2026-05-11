@@ -43,7 +43,7 @@ const features = [
 ];
 
 export default function Home() {
-  const { learner } = useAppContext();
+  const { learner , teacher} = useAppContext();
 
   return (
     <div className="bg-background min-h-screen font-sans selection:bg-blue-100 dark:selection:bg-blue-900">
@@ -86,8 +86,8 @@ export default function Home() {
               className="w-full sm:w-auto rounded-full h-12 md:h-14 px-6 md:px-8 text-base md:text-lg border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-black/50 backdrop-blur-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               asChild
             >
-              <NavLink to={learner ? "/join" : "/login"} className="flex items-center justify-center gap-2">
-                {learner ? "Join Path" : "Login"} 
+              <NavLink to={learner || teacher ? "/join" : "/login"} className="flex items-center justify-center gap-2">
+                {learner || teacher ? "Join Path" : "Login"} 
               </NavLink>
             </Button>
           </div>

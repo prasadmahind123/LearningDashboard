@@ -395,9 +395,9 @@ export default function TeacherLayout() {
           <SidebarLink key={link.path} link={link} onClick={onLinkClick} />
         ))}
       </nav>
-      <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+      {/* <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
         <RevenueWidget revenue={teacher?.revenue ?? 0} />
-      </div>
+      </div> */}
     </>
   );
 

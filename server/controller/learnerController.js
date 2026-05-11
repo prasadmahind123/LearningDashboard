@@ -995,6 +995,7 @@ export const getEnrolledPaths = async (req, res) => {
 export const markModuleCompleted = async (req, res) => {
   try {
     const { studentId, pathId, moduleId, action = "add", hoursSpent = 0 } = req.body;
+    console.log("markModuleCompleted called with:", { studentId, pathId, moduleId, action, hoursSpent });
 
     if (!studentId || !pathId || !moduleId) {
       return res.status(400).json({ message: "studentId, pathId, and moduleId are required." });
@@ -1010,6 +1011,7 @@ export const markModuleCompleted = async (req, res) => {
       return res.status(404).json({ message: "Not enrolled in this path." });
     }
 
+    // ── Update completedModules ──────────────────────────────────────────────
     if (action === "remove") {
       enrolledPath.completedModules = enrolledPath.completedModules.filter(
         (id) => id.toString() !== moduleId
@@ -1023,12 +1025,21 @@ export const markModuleCompleted = async (req, res) => {
       }
     }
 
-    const completed = enrolledPath.completedModules.length;
-    const total = enrolledPath.totalModules.length;
-    enrolledPath.progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
-    enrolledPath.lastAccessed = new Date();
+    // ── Recalculate progress ─────────────────────────────────────────────────
+    // If totalModules is empty, try to fetch from the LearningPath document
+    if (!enrolledPath.totalModules?.length) {
+      const path = await LearningPath.findById(pathId).select("content").lean();
+      if (path?.content?.length) {
+        enrolledPath.totalModules = path.content.map((m) => m._id);
+      }
+    }
 
-    // Log learning activity for today
+    const completed = enrolledPath.completedModules.length;
+    const total     = enrolledPath.totalModules.length;
+    enrolledPath.progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+    enrolledPath.lastAccessed    = new Date();
+
+    // ── Log learning activity ────────────────────────────────────────────────
     if (hoursSpent > 0) {
       const todayStr = new Date().toDateString();
       const todayLog = learner.learningActivity.find(
@@ -1037,20 +1048,24 @@ export const markModuleCompleted = async (req, res) => {
 
       if (todayLog) {
         todayLog.hoursSpent += hoursSpent;
+        learner.markModified("learningActivity");
       } else {
         learner.learningActivity.push({ pathId, moduleId, hoursSpent, date: new Date() });
       }
     }
 
+    // ── CRITICAL FIX: tell Mongoose the nested array changed ────────────────
+    learner.markModified("enrolledPaths");
+
     await learner.save();
     await updateLearnerStats(learner._id);
 
     return res.json({
-      success: true,
-      message: action === "remove" ? "Module marked incomplete." : "Module marked complete.",
-      progressPercent: enrolledPath.progressPercent,
+      success:          true,
+      message:          action === "remove" ? "Module marked incomplete." : "Module marked complete.",
+      progressPercent:  enrolledPath.progressPercent,
       completedModules: completed,
-      totalModules: total,
+      totalModules:     total,
     });
   } catch (error) {
     console.error("[markModuleCompleted]", error);

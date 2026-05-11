@@ -1110,30 +1110,34 @@ export const importLearningPathFromBibtex = async (req, res) => {
     }
 
     const bibtexContent = fs.readFileSync(req.file.path, "utf8");
-
     const entries = bibtexParse.toJSON(bibtexContent);
-
-    console.log("Parsed BibTeX entries:", entries);
 
     const modules = entries.map((entry) => {
       const tags = entry.entryTags || {};
 
-      const title = tags.title || "Untitled Resource";
-      const url = tags.url || tags.link || "";
+      const title = tags.title || tags.booktitle || "Untitled Resource";
+      const url   = tags.url   || tags.link      || "";
+
+      // Priority: abstract → note → annote → empty string
+      const description =
+        tags.abstract ||
+        tags.note     ||
+        tags.annote   ||
+        tags.description  ||
+        "";
 
       return {
-        title,                      // 👈 Module Title
-        description: `${tags.author || ""} ${tags.year ? `(${tags.year})` : ""}`,
+        title,
+        description,
         duration: "",
-        type: "reading",            // BibTeX usually papers/articles
+        type: "reading",
         urls: url ? [url] : [""],
-
         files: {
-          documents: [],
-          video: null,
-          pdf: null,
-          bibtex: null,
-          excel: null,
+          documents:       [],
+          video:           null,
+          pdf:             null,
+          bibtex:          null,
+          excel:           null,
           additionalFiles: [],
         },
       };
@@ -1141,10 +1145,9 @@ export const importLearningPathFromBibtex = async (req, res) => {
 
     fs.unlinkSync(req.file.path);
 
-    res.json({ modules });
-
+    return res.json({ modules });
   } catch (err) {
-    console.error("BibTeX import error:", err);
-    res.status(500).json({ error: "BibTeX parsing failed" });
+    console.error("[importLearningPathFromBibtex]", err);
+    return res.status(500).json({ error: "BibTeX parsing failed" });
   }
 };

@@ -207,7 +207,7 @@ useEffect(() => {
       const res = await axios.post(
         "/api/learner/complete-module",
         {
-          studentId: learner.id,
+          studentId: learner._id,
           pathId: course._id,
           moduleId,
           action: isCompleted ? "remove" : "add",
